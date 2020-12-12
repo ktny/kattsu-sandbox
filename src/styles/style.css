@@ -1,0 +1,30 @@
+.container {
+  background-color: #f9fbfe;
+}
+
+main {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 40px 64px;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 0 1px #d9d9d9;
+}
+
+header {
+  background-color: #fffff0;
+  padding: 20px;
+}
+
+.post-list {
+
+}
+
+.post-item {
+  margin-top: 30px;
+}
+
+.post-item-title {
+  color: #3c3c3c;
+  text-decoration: none;
+}
