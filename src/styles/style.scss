@@ -22,6 +22,9 @@ header {
 
 .post-item {
   margin-top: 30px;
+  &:first-of-type {
+    margin-top: 0;
+  }
 }
 
 .post-item-title {

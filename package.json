@@ -16,6 +16,7 @@
   "dependencies": {
     "gatsby": "^2.26.1",
     "gatsby-image": "^2.7.0",
+    "gatsby-plugin-sass": "^2.7.0",
     "gatsby-plugin-sharp": "^2.10.1",
     "gatsby-plugin-typography": "^2.8.0",
     "gatsby-remark-images": "^3.7.1",
@@ -24,6 +25,7 @@
     "gatsby-source-filesystem": "^2.7.0",
     "gatsby-transformer-remark": "^2.12.0",
     "gatsby-transformer-sharp": "^2.8.0",
+    "node-sass": "^4.0.0",
     "prismjs": "^1.22.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",

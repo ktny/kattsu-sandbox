@@ -24,6 +24,7 @@ module.exports = {
       resolve: `gatsby-transformer-remark`,
       options: {
         plugins: [
+          `gatsby-plugin-sass`,
           `gatsby-remark-relative-images`,
           {
             resolve: `gatsby-remark-images`,
