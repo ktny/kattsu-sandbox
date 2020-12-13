@@ -4,7 +4,7 @@ const typography = new Typography({
   title: "kattsu-sandbox",
   baseFontSize: "16px",
   baseLineHeight: 2.0,
-  scaleRatio: 2.2,
+  scaleRatio: 1.8,
   googleFonts: [
     {
       name: 'Noto+Sans+JP',

@@ -1,4 +1,5 @@
 const path = require(`path`)
+const kebabCase = require('lodash/kebabCase')
 const { createFilePath } = require(`gatsby-source-filesystem`)
 
 exports.onCreateNode = ({ node, getNode, actions }) => {
@@ -23,12 +24,20 @@ exports.createPages = async({ graphql, actions }) => {
             fields {
               slug
             }
+            frontmatter {
+              tags
+            }
           }
         }
       }
     }  
   `)
-  result.data.allMarkdownRemark.edges.forEach(({ node }) => {
+
+  const posts = result.data.allMarkdownRemark.edges
+  const tagSet = new Set();
+
+  // 各記事の静的ページを作成
+  posts.forEach(({ node }) => {
     createPage({
       path: node.fields.slug,
       component: path.resolve(`./src/templates/post.js`),
@@ -36,5 +45,18 @@ exports.createPages = async({ graphql, actions }) => {
         slug: node.fields.slug,
       },
     })
+    node.frontmatter.tags.map(tag => tagSet.add(tag))
+  })
+
+
+  // 各タグ一覧ページを作成
+  Array.from(tagSet).forEach(tag => {
+    createPage({
+      path: `/tag/${kebabCase(tag)}`,
+      component: path.resolve(`./src/templates/posts.js`),
+      context: {
+        tag: tag
+      }
+    })    
   })
 }

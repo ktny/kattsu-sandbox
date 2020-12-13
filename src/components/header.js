@@ -14,19 +14,15 @@ const Header = ({ location }) => {
     `
   )
 
-  if (location.pathname === "/") {
-    return (
-      <header>
-        <h1 className="header-title">{data.site.siteMetadata.title}</h1>
-      </header>
-    )
-  } else {
-    return (
-      <header>
-        <Link to="/" className="header-title">{data.site.siteMetadata.title}</Link>
-      </header>
-    )
-  }
+  return (
+    <header>
+      {
+        location.pathname === "/"
+        ? <h1 className="header-title">{data.site.siteMetadata.title}</h1>
+        : <Link to="/" className="header-title">{data.site.siteMetadata.title}</Link>
+      }
+    </header>
+  )
 }
 
 export default Header

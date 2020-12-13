@@ -1,6 +1,7 @@
 ---
 title: "PostgreSQLのメモリ管理を考える（主にwork_memについて）"
 date: "2020-12-13"
+tags: ["PostgreSQL", "test", "memory"]
 ---
 
 ## はじめに
