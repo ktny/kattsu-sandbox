@@ -3,9 +3,9 @@
 }
 
 main {
-  max-width: 700px;
+  max-width: 800px;
   margin: 40px auto;
-  padding: 40px 64px;
+  padding: 40px;
   border-radius: 4px;
   background-color: #fff;
   box-shadow: 0 0 1px #d9d9d9;
@@ -25,9 +25,27 @@ header {
   &:first-of-type {
     margin-top: 0;
   }
+  h2 {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
 }
 
 .post-item-title {
-  color: #3c3c3c;
+  color: #333;
   text-decoration: none;
+}
+
+.gatsby-code-title {
+  background: #f3e3b9;
+  color: #b38383;
+  margin-bottom: -0.65em;
+  padding: 0.7rem 1.05rem;
+  font-size: 0.8em;
+  line-height: 0.2;
+  font-family: SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  display: table;
 }

@@ -17,7 +17,7 @@ const Header = ({ location }) => {
   if (location.pathname === "/") {
     return (
       <header>
-        <h2>{data.site.siteMetadata.title}</h2>
+        <h1>{data.site.siteMetadata.title}</h1>
       </header>
     )
   } else {

@@ -12,18 +12,15 @@ module.exports = {
     user: { name: "kattsu", email: "kattsu@example.com"}
   },
   plugins: [
-    {
-      resolve: `gatsby-plugin-typography`,
-      options: {
-        pathToConfigModule: `src/utils/typography`,
-      },
-    },
     `gatsby-transformer-sharp`,
     `gatsby-plugin-sharp`,
     {
       resolve: `gatsby-transformer-remark`,
       options: {
+        pedantic: false,
+        excerpt_separator: `<!-- endexcerpt -->`,
         plugins: [
+          `gatsby-remark-code-titles`,
           `gatsby-plugin-sass`,
           `gatsby-remark-relative-images`,
           {
@@ -81,6 +78,12 @@ module.exports = {
       options: {
         name: `src`,
         path: `${__dirname}/src/`,
+      },
+    },
+    {
+      resolve: `gatsby-plugin-typography`,
+      options: {
+        pathToConfigModule: `src/utils/typography`,
       },
     },
   ],

@@ -8,7 +8,7 @@ date: "2020-12-12"
 - test
 - test2
 
-```javascript
+```javascript:title=gatsby.js
 result.data.allMarkdownRemark.edges.forEach(({ node }) => {
   createPage({
     path: node.fields.slug,

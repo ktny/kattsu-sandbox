@@ -14,7 +14,7 @@ export default function Home(props) {
               <Link to={node.fields.slug} className="post-item-title">
                 <h2>{node.frontmatter.title}</h2>
               </Link>
-              <p>{node.frontmatter.date}</p>
+              <small><time>{node.frontmatter.date}</time></small>
             </article>
           ))}
         </div>
