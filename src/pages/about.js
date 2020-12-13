@@ -1,6 +1,6 @@
 import React from "react"
 import Layout from "../components/layout"
-import { graphql } from "gatsby";
+import { graphql } from "gatsby"
 
 const AboutPage = ({ data }) => {
   return (
@@ -15,7 +15,7 @@ const AboutPage = ({ data }) => {
           </tr>
         </thead>
         <tbody>
-          {data.allFile.nodes.map(node => (
+          {data.allFile.nodes.map((node) => (
             <tr key={node.id}>
               <td>{node.relativePath}</td>
               <td>{node.size}</td>
