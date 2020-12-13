@@ -6,20 +6,18 @@ import { graphql, Link } from "gatsby"
 export default function Home(props) {
   const { data } = props
   return (
-    <div>
-      <Layout {...props}>
-        <div className="post-list">
-          {data.allMarkdownRemark.nodes.map(node => (
-            <article className="post-item" key={node.id}>
-              <Link to={node.fields.slug} className="post-item-title">
-                <h2>{node.frontmatter.title}</h2>
-              </Link>
-              <small><time>{node.frontmatter.date}</time></small>
-            </article>
-          ))}
-        </div>
-      </Layout>
-    </div>
+    <Layout {...props}>
+      <div className="post-list">
+        {data.allMarkdownRemark.nodes.map(node => (
+          <article className="post-item" key={node.id}>
+            <Link to={node.fields.slug} className="post-item-title">
+              <h2>{node.frontmatter.title}</h2>
+            </Link>
+            <small><time>{node.frontmatter.date}</time></small>
+          </article>
+        ))}
+      </div>
+    </Layout>
   )
 }
 

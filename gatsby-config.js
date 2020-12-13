@@ -8,12 +8,19 @@ module.exports = {
   siteMetadata: {
     title: "Kattsu Sandbox",
     author: "kattsu",
-    category: ["Blog", "Tech"],
-    user: { name: "kattsu", email: "kattsu@example.com"}
+    twitterUrl: `https://twitter.com/kattsu_3`,
+    social: [
+      {
+        name: `twitter`,
+        url: `https://twitter.com/kattsu_3`,
+      },
+      {
+        name: `github`,
+        url: `https://github.com/ktny`,
+      },
+    ],
   },
   plugins: [
-    `gatsby-transformer-sharp`,
-    `gatsby-plugin-sharp`,
     {
       resolve: `gatsby-transformer-remark`,
       options: {
@@ -80,6 +87,8 @@ module.exports = {
         path: `${__dirname}/src/`,
       },
     },
+    `gatsby-transformer-sharp`,
+    `gatsby-plugin-sharp`,
     {
       resolve: `gatsby-plugin-typography`,
       options: {

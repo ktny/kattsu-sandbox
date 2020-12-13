@@ -29,7 +29,7 @@ const typography = new Typography({
     },
     "h2,h3": {
       lineHeight: 1.2,
-      paddingBottom: rhythm(2/16),
+      paddingBottom: rhythm(4/16),
       borderBottom: "1px solid #ddd",
       marginTop: rhythm(32/16),
       marginBottom: rhythm(10/16),

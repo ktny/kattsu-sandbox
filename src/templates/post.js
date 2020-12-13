@@ -9,7 +9,7 @@ export default function Post(props) {
     <Layout {...props}>
       {/* <Img fixed={data.markdownRemark.frontmatter.topImage.childImageSharp.fixed} /> */}
       <h1>{data.markdownRemark.frontmatter.title}</h1>
-      <small>Posted at: <time>{data.markdownRemark.frontmatter.date}</time></small>
+      <small>投稿日: <time>{data.markdownRemark.frontmatter.date}</time></small>
       <div dangerouslySetInnerHTML={{ __html: data.markdownRemark.html }} />
     </Layout>
   )

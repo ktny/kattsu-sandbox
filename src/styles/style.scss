@@ -1,4 +1,5 @@
 .container {
+  height: 100vh;
   background-color: #f9fbfe;
 }
 
@@ -48,4 +49,44 @@ header {
   font-weight: 600;
   border-radius: 8px 8px 0 0;
   display: table;
+}
+
+footer {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid #ccc;
+}
+
+.about-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 18px;
+}
+
+.bio {
+  display: flex;
+  margin-top: 16px;
+}
+
+.bio-image {
+  width: 48px;
+  height: 48px;
+  margin-right: 10px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.bio-text {
+  margin-top: 5px;
+}
+
+.bio-name {
+  margin-bottom: 0;
+  line-height: 1.2;
+}
+
+.bio-desc {
+  margin-bottom: 0;
+  font-size: 14px;
 }
