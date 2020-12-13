@@ -17,13 +17,13 @@ const Header = ({ location }) => {
   if (location.pathname === "/") {
     return (
       <header>
-        <h1>{data.site.siteMetadata.title}</h1>
+        <h1 className="header-title">{data.site.siteMetadata.title}</h1>
       </header>
     )
   } else {
     return (
       <header>
-        <Link to="/">{data.site.siteMetadata.title}</Link>
+        <Link to="/" className="header-title">{data.site.siteMetadata.title}</Link>
       </header>
     )
   }

@@ -36,7 +36,7 @@ const Footer = () => {
           </div>
           <div className="bio-text">
             <p className="bio-name">
-              <a href={data.site.siteMetadata.twitterUrl} target="_blank">@{data.site.siteMetadata.author}</a>
+              <a href={data.site.siteMetadata.twitterUrl} target="_blank" rel="noreferrer">@{data.site.siteMetadata.author}</a>
             </p>
             <p className="bio-desc">機械メーカーに勤めるwebエンジニアです。</p>
           </div>
