@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  padding-bottom: 40px;
+  padding-bottom: 2.5rem;
   background-color: #112d4e;
 }
 
@@ -12,10 +12,14 @@ a {
 
 main {
   max-width: 800px;
-  margin: 40px auto;
-  padding: 40px;
+  margin: 2.5rem auto;
+  padding: 2.5rem;
   border-radius: 4px;
   background-color: #f9f7f7;
+  @media screen and (max-width: 414px) {
+    padding: 1rem;
+    border-radius: 0;
+  }
 }
 
 header {
@@ -125,4 +129,8 @@ footer {
   &:first-of-type {
     margin-left: 0;
   }
+}
+
+.post-body {
+  margin-top: 4rem;
 }

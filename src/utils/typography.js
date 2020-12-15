@@ -68,6 +68,9 @@ const typography = new Typography({
     "pre[class*='language-']": {
       marginBottom: rhythm(16 / 16),
     },
+    strong: {
+      background: "linear-gradient(transparent 80%, #ff99ff 60%)",
+    },
   }),
 })
 

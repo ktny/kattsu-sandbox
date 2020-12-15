@@ -8,13 +8,13 @@ const Posts = (props) => {
   return (
     <Layout {...props}>
       <div className="post-list">
-        {data.allMarkdownRemark.nodes.map(node => (
+        {data.allMarkdownRemark.nodes.map((node) => (
           <article className="post-item" key={node.fields.slug}>
-            <small><time>{node.frontmatter.date}</time></small>
+            <small>
+              <time>{node.frontmatter.date}</time>
+            </small>
             <h2 className="post-item-title">
-              <Link to={node.fields.slug}>
-                {node.frontmatter.title}
-              </Link>
+              <Link to={node.fields.slug}>{node.frontmatter.title}</Link>
             </h2>
             <Tags tags={node.frontmatter.tags} />
           </article>
