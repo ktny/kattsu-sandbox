@@ -3,7 +3,6 @@ import { Link } from "gatsby"
 import kebabCase from "lodash/kebabCase"
 
 const Tags = ({ tags }) => {
-  console.log(tags)
   if (!tags) {
     return <></>
   }

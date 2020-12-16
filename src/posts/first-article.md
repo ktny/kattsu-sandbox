@@ -2,7 +2,7 @@
 title: "はじめての記事"
 date: "2020-08-18"
 topImage: "../images/test.jpg"
-tags: ["test"]
+tags: ["test", "first"]
 ---
 
 ### Gatsbyで最初の記事

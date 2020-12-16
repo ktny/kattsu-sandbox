@@ -1,7 +1,7 @@
 ---
 title: "2番目の記事"
 date: "2020-12-12"
-tags: ["test"]
+tags: ["test", "memory"]
 ---
 
 ひゃー

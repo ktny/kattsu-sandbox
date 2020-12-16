@@ -11,14 +11,14 @@ a {
 }
 
 main {
-  max-width: 800px;
+  max-width: 960px;
   margin: 2.5rem auto;
-  padding: 2.5rem;
-  border-radius: 4px;
+  padding: 1rem;
+  border-radius: 0;
   background-color: #f9f7f7;
-  @media screen and (max-width: 414px) {
-    padding: 1rem;
-    border-radius: 0;
+  @media screen and (min-width: 960px) {
+    padding: 2.5rem;
+    border-radius: 4px;
   }
 }
 
@@ -133,4 +133,22 @@ footer {
 
 .post-body {
   margin-top: 4rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  margin: 2.5rem auto 0;
+}
+
+.pagination-item {
+  display: block;
+  width: 80px;
+  text-align: center;
+}
+
+.pagination-item-link {
+  display: block;
+  color: #272724;
+  border-bottom: 1px solid;
 }

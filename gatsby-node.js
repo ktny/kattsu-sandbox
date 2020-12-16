@@ -1,6 +1,7 @@
 const path = require(`path`)
-const kebabCase = require('lodash/kebabCase')
-const { createFilePath } = require(`gatsby-source-filesystem`)
+const kebabCase = require("lodash/kebabCase")
+const { createFilePath } = require("gatsby-source-filesystem")
+const { paginate } = require("gatsby-awesome-pagination")
 
 exports.onCreateNode = ({ node, getNode, actions }) => {
   const { createNodeField } = actions
@@ -14,9 +15,9 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
   }
 }
 
-exports.createPages = async({ graphql, actions }) => {
+exports.createPages = async ({ graphql, actions }) => {
   const { createPage } = actions
-  const result = await graphql(`
+  const postsResult = await graphql(`
     query {
       allMarkdownRemark {
         edges {
@@ -30,13 +31,13 @@ exports.createPages = async({ graphql, actions }) => {
           }
         }
       }
-    }  
+    }
   `)
 
-  const posts = result.data.allMarkdownRemark.edges
-  const tagSet = new Set();
+  const posts = postsResult.data.allMarkdownRemark.edges
+  const tagSet = new Set()
 
-  // 各記事の静的ページを作成
+  // 記事ページを作成
   posts.forEach(({ node }) => {
     createPage({
       path: node.fields.slug,
@@ -45,18 +46,29 @@ exports.createPages = async({ graphql, actions }) => {
         slug: node.fields.slug,
       },
     })
-    node.frontmatter.tags.map(tag => tagSet.add(tag))
+    node.frontmatter.tags.map((tag) => tagSet.add(tag))
   })
 
+  // 記事一覧ページを作成
+  paginate({
+    createPage,
+    items: posts,
+    itemsPerPage: 1,
+    pathPrefix: "/",
+    component: path.resolve(`./src/templates/posts.js`),
+  })
 
-  // 各タグ一覧ページを作成
-  Array.from(tagSet).forEach(tag => {
-    createPage({
-      path: `/tag/${kebabCase(tag)}`,
-      component: path.resolve(`./src/templates/posts.js`),
+  // タグごとの記事一覧ページを作成
+  Array.from(tagSet).map((tag) => {
+    paginate({
+      createPage,
+      items: posts,
+      itemsPerPage: 1,
+      pathPrefix: `/tag/${kebabCase(tag)}`,
+      component: path.resolve(`./src/templates/tag-posts.js`),
       context: {
-        tag: tag
-      }
-    })    
+        tag: tag,
+      },
+    })
   })
 }
