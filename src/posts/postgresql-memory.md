@@ -1,7 +1,7 @@
 ---
 title: "PostgreSQLのメモリ管理を考える（主にwork_memについて）"
 date: "2020-12-13"
-tags: ["PostgreSQL", "test", "memory"]
+tags: ["PostgreSQL"]
 ---
 
 ## はじめに
@@ -26,7 +26,7 @@ PostgreSQLのバージョンは13.1で検証しています。
 下記はPostgreSQLが動くサーバ上でpostgresに関連するプロセスを表示した結果です。
 
 ```sh
-root@aef8b2fbf7c0:/# ps aux | grep postgres
+$ ps aux | grep postgres
 postgres     1  0.0  0.3 213892 26500 ?        Ss   Dec05   0:07 postgres
 postgres    66  0.0  0.8 214024 70144 ?        Ss   Dec05   0:00 postgres: checkpointer
 postgres    67  0.0  0.0 213892  5688 ?        Ss   Dec05   0:01 postgres: background writer

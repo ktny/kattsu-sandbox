@@ -45,6 +45,7 @@ const typography = new Typography({
       ...adjustFontSizeTo("16px"),
     },
     p: {
+      whiteSpace: "pre-wrap",
       wordBreak: "break-all",
     },
     a: {

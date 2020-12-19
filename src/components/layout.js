@@ -4,8 +4,6 @@ import Footer from "./footer"
 import Helmet from "./helmet"
 
 const Layout = (props) => {
-  const { data } = props
-
   return (
     <>
       <Helmet />
