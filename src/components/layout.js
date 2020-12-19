@@ -1,16 +1,22 @@
 import React from "react"
 import Header from "./header"
 import Footer from "./footer"
+import Helmet from "./helmet"
 
 const Layout = (props) => {
+  const { data } = props
+
   return (
-    <div className="container">
-      <Header {...props} />
+    <>
+      <Helmet />
+      <div className="container">
+        <Header {...props} />
         <main>
-          { props.children }
-          <Footer/>
+          {props.children}
+          <Footer />
         </main>
-    </div>
+      </div>
+    </>
   )
 }
 

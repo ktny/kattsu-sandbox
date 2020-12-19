@@ -5,9 +5,14 @@ import Tags from "./tags"
 
 const Posts = (props) => {
   const { data } = props
+  // console.log(data)
 
   return (
     <Layout {...props}>
+      {/* <Helmet>
+        <title>Kattsu Sandbox</title>
+        <meta name="description" content="トップページ" />
+      </Helmet> */}
       <div className="post-list">
         {data.allMarkdownRemark.nodes.map((node) => (
           <article className="post-item" key={node.fields.slug}>
