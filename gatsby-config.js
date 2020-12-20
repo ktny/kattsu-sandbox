@@ -10,6 +10,7 @@ module.exports = {
   siteMetadata: {
     title: "Kattsu Sandbox",
     author: "kattsu",
+    siteUrl: "https://kattsu-sandbox.vercel.app",
     twitterUrl: `https://twitter.com/kattsu_3`,
     social: [
       {
@@ -123,5 +124,6 @@ module.exports = {
         icon: `src/images/favicon.png`,
       },
     },
+    `gatsby-plugin-sitemap`,
   ],
 }
