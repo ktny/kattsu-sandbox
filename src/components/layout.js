@@ -11,11 +11,15 @@ const Layout = (props) => {
         <Header {...props} />
         <main>
           {props.children}
-          <Footer />
+          {props.showProfile ? <Footer /> : <></>}
         </main>
       </div>
     </>
   )
+}
+
+Layout.defaultProps = {
+  showProfile: true,
 }
 
 export default Layout
