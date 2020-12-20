@@ -5,7 +5,7 @@ export default Posts
 
 export const query = graphql`
   query TagPosts($skip: Int!, $limit: Int!, $tag: String!) {
-    allMarkdownRemark(
+    allMdx(
       sort: { fields: [frontmatter___date], order: DESC }
       filter: { frontmatter: { tags: { in: [$tag] } } }
       skip: $skip

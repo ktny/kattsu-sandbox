@@ -16,7 +16,7 @@ const Posts: React.FC<PageProps<GatsbyTypes.PostsQuery, PageContext>> = (
   return (
     <Layout {...props}>
       <div className="post-list">
-        {data.allMarkdownRemark.nodes.map((node) => (
+        {data.allMdx.nodes.map((node) => (
           <article className="post-item" key={node.fields.slug}>
             <small>
               <time>{node.frontmatter.date}</time>

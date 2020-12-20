@@ -5,7 +5,7 @@ const { paginate } = require("gatsby-awesome-pagination")
 
 exports.onCreateNode = ({ node, getNode, actions }) => {
   const { createNodeField } = actions
-  if (node.internal.type === `MarkdownRemark`) {
+  if (node.internal.type === `Mdx`) {
     const slug = createFilePath({ node, getNode, basePath: `pages` })
     createNodeField({
       node,
@@ -19,7 +19,7 @@ exports.createPages = async ({ graphql, actions }) => {
   const { createPage } = actions
   const postsResult = await graphql(`
     query {
-      allMarkdownRemark {
+      allMdx {
         edges {
           node {
             fields {
@@ -34,7 +34,7 @@ exports.createPages = async ({ graphql, actions }) => {
     }
   `)
 
-  const posts = postsResult.data.allMarkdownRemark.edges
+  const posts = postsResult.data.allMdx.edges
   const tagSet = new Set()
 
   // 記事ページを作成

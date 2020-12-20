@@ -37,15 +37,14 @@ module.exports = {
         outputPath: `./__generated__/gatsby-types.d.ts`,
       },
     },
+    `gatsby-plugin-sass`,
     `gatsby-plugin-react-helmet`,
     {
-      resolve: `gatsby-transformer-remark`,
+      resolve: `gatsby-plugin-mdx`,
       options: {
-        pedantic: false,
-        excerpt_separator: `<!-- endexcerpt -->`,
-        plugins: [
+        extensions: [`.md`, `.mdx`],
+        gatsbyRemarkPlugins: [
           `gatsby-remark-code-titles`,
-          `gatsby-plugin-sass`,
           `gatsby-remark-relative-images`,
           {
             resolve: `gatsby-remark-images`,

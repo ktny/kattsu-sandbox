@@ -5,7 +5,7 @@ export default Posts
 
 export const query = graphql`
   query Posts($skip: Int!, $limit: Int!) {
-    allMarkdownRemark(
+    allMdx(
       sort: { fields: [frontmatter___date], order: DESC }
       skip: $skip
       limit: $limit
