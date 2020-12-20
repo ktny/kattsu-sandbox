@@ -1,7 +1,11 @@
-.container {
+$bg-dark-color: #222831;
+$bg-light-color: #f9f7f7;
+$text-color: #222831;
+
+.wrapper {
   min-height: 100vh;
   padding-bottom: 2.5rem;
-  background-color: #112d4e;
+  background-color: $bg-dark-color;
 }
 
 a {
@@ -10,12 +14,12 @@ a {
   }
 }
 
-main {
+.container {
   max-width: 960px;
   margin: 2.5rem auto;
   padding: 1rem;
   border-radius: 0;
-  background-color: #f9f7f7;
+  background-color: $bg-light-color;
   @media screen and (min-width: 960px) {
     padding: 2.5rem;
     border-radius: 4px;
@@ -27,14 +31,14 @@ header {
   align-items: center;
   height: 80px;
   padding: 20px;
-  background-color: #f9f7f7;
+  background-color: $bg-light-color;
 }
 
 .header-title {
   margin: 0;
   padding: 0;
   border: 0;
-  color: #272724;
+  color: $text-color;
   line-height: 1;
   font-size: 24px;
   font-weight: bold;
@@ -55,12 +59,12 @@ header {
   font-size: 20px;
   text-decoration: none;
   a {
-    color: #272724;
+    color: $text-color;
   }
 }
 
 .gatsby-code-title {
-  background: #112d4e;
+  background: $bg-dark-color;
   color: #fff;
   margin-bottom: -0.65em;
   padding: 0.7rem 1.05rem;
@@ -73,12 +77,6 @@ header {
 code[class*="language-"],
 pre[class*="language-"] {
   border-radius: 0 !important;
-}
-
-footer {
-  margin-top: 40px;
-  padding-top: 24px;
-  border-top: 1px solid #ccc;
 }
 
 .about-title {
@@ -153,4 +151,56 @@ footer {
   display: block;
   color: #272724;
   border-bottom: 1px solid;
+}
+
+.post-container {
+  display: flex;
+  flex-direction: row-reverse;
+  width: 1260px;
+  margin: 2.5rem auto;
+}
+
+.post-toc {
+  width: 300px;
+  background-color: #f9f7f7;
+  @media screen and (min-width: 960px) {
+    margin-left: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    height: 100%;
+    position: sticky;
+    top: 1rem;
+    font-size: 14px;
+  }
+}
+
+.toc-list {
+  list-style: none;
+  margin: 0;
+}
+
+.toc-list-item {
+  cursor: pointer;
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+.heading2 {
+  margin-left: 16px;
+}
+
+.post-content {
+  max-width: 960px;
+  padding: 1rem;
+  border-radius: 0;
+  background-color: #f9f7f7;
+  @media screen and (min-width: 960px) {
+    padding: 2.5rem;
+    border-radius: 4px;
+  }
+}
+
+.anchor {
+  margin-right: 8px;
 }

@@ -2,6 +2,7 @@ import React from "react"
 import { Link, PageProps } from "gatsby"
 import Layout from "./layout"
 import Tags from "./tags"
+import Bio from "./bio"
 
 type PageContext = {
   previousPagePath: string
@@ -15,7 +16,7 @@ const Posts: React.FC<PageProps<GatsbyTypes.PostsQuery, PageContext>> = (
 
   return (
     <Layout {...props}>
-      <div className="post-list">
+      <div className="post-list container">
         {data.allMdx.nodes.map((node) => (
           <article className="post-item" key={node.fields.slug}>
             <small>
@@ -57,6 +58,7 @@ const Posts: React.FC<PageProps<GatsbyTypes.PostsQuery, PageContext>> = (
           </ul>
         </nav>
       </div>
+      <Bio />
     </Layout>
   )
 }

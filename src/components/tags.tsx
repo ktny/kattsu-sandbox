@@ -2,17 +2,13 @@ import React from "react"
 import { Link } from "gatsby"
 import kebabCase from "lodash/kebabCase"
 
-type Props = {
-  readonly tags: string[]
-}
-
-const Tags: React.FC<Props> = ({ tags }) => {
+const Tags = ({ tags }) => {
   if (!tags) {
     return <></>
   }
   return (
     <div className="tags">
-      {(tags || []).map((tag) => (
+      {(tags || []).map((tag: string) => (
         <Link to={`/tag/${kebabCase(tag)}`} className="tag" key={tag}>
           {tag}
         </Link>

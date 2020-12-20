@@ -44,6 +44,7 @@ module.exports = {
       options: {
         extensions: [`.md`, `.mdx`],
         gatsbyRemarkPlugins: [
+          `gatsby-remark-autolink-headers`,
           `gatsby-remark-code-titles`,
           `gatsby-remark-relative-images`,
           {
