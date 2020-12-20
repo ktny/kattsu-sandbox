@@ -1,11 +1,11 @@
 import React from "react"
-import { useStaticQuery } from "gatsby"
-import { Helmet as ReactHelmet } from "react-helmet"
+import { useStaticQuery, graphql, PageProps } from "gatsby"
+import { Helmet as HelmetWrapper } from "react-helmet"
 
 const Helmet = () => {
-  const data = useStaticQuery(
+  const data = useStaticQuery<GatsbyTypes.HelmetQuery>(
     graphql`
-      query {
+      query Helmet {
         site {
           siteMetadata {
             title
@@ -16,10 +16,10 @@ const Helmet = () => {
   )
 
   return (
-    <ReactHelmet>
+    <HelmetWrapper>
       <html lang="ja" />
       <title>{data.site.siteMetadata.title}</title>
-    </ReactHelmet>
+    </HelmetWrapper>
   )
 }
 

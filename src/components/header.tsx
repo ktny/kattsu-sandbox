@@ -1,10 +1,10 @@
 import React from "react"
-import { useStaticQuery, Link, graphql } from "gatsby"
+import { useStaticQuery, Link, graphql, PageProps } from "gatsby"
 
-const Header = ({ location }) => {
-  const data = useStaticQuery(
+const Header: React.FC<PageProps> = ({ location }) => {
+  const data = useStaticQuery<GatsbyTypes.HeaderQuery>(
     graphql`
-      query {
+      query Header {
         site {
           siteMetadata {
             title

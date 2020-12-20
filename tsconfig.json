@@ -1,0 +1,16 @@
+{
+  "include": ["./src/**/*", "__generated__/**/*"],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["dom", "es2017"],
+    "jsx": "react",
+    "strict": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node"
+  }
+}

@@ -41,7 +41,7 @@ exports.createPages = async ({ graphql, actions }) => {
   posts.forEach(({ node }) => {
     createPage({
       path: node.fields.slug,
-      component: path.resolve(`./src/templates/post.js`),
+      component: path.resolve(`./src/templates/post.tsx`),
       context: {
         slug: node.fields.slug,
       },
@@ -55,7 +55,7 @@ exports.createPages = async ({ graphql, actions }) => {
     items: posts,
     itemsPerPage: 10,
     pathPrefix: "/",
-    component: path.resolve(`./src/templates/posts.js`),
+    component: path.resolve(`./src/templates/posts.tsx`),
   })
 
   // タグごとの記事一覧ページを作成
@@ -65,7 +65,7 @@ exports.createPages = async ({ graphql, actions }) => {
       items: posts,
       itemsPerPage: 10,
       pathPrefix: `/tag/${kebabCase(tag)}`,
-      component: path.resolve(`./src/templates/tag-posts.js`),
+      component: path.resolve(`./src/templates/tag-posts.tsx`),
       context: {
         tag: tag,
       },

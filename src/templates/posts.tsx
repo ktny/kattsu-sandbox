@@ -4,10 +4,9 @@ import { graphql } from "gatsby"
 export default Posts
 
 export const query = graphql`
-  query($skip: Int!, $limit: Int!, $tag: String!) {
+  query Posts($skip: Int!, $limit: Int!) {
     allMarkdownRemark(
       sort: { fields: [frontmatter___date], order: DESC }
-      filter: { frontmatter: { tags: { in: [$tag] } } }
       skip: $skip
       limit: $limit
     ) {

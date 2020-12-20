@@ -3,9 +3,9 @@ import { useStaticQuery, graphql } from "gatsby"
 import Img from "gatsby-image"
 
 const Footer = () => {
-  const data = useStaticQuery(
+  const data = useStaticQuery<GatsbyTypes.FooterQuery>(
     graphql`
-      query {
+      query Footer {
         site {
           siteMetadata {
             author
@@ -15,7 +15,12 @@ const Footer = () => {
         avatar: file(absolutePath: { regex: "/avatar.png/" }) {
           childImageSharp {
             fixed(width: 48, height: 48) {
-              ...GatsbyImageSharpFixed
+              base64
+              width
+              height
+              src
+              srcSet
+              # ...GatsbyImageSharpFixed
             }
           }
         }
@@ -36,7 +41,13 @@ const Footer = () => {
           </div>
           <div className="bio-text">
             <p className="bio-name">
-              <a href={data.site.siteMetadata.twitterUrl} target="_blank" rel="noreferrer">@{data.site.siteMetadata.author}</a>
+              <a
+                href={data.site.siteMetadata.twitterUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                @{data.site.siteMetadata.author}
+              </a>
             </p>
             <p className="bio-desc">機械メーカーに勤めるwebエンジニアです。</p>
           </div>

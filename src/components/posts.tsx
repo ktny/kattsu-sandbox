@@ -1,9 +1,16 @@
 import React from "react"
-import { Link } from "gatsby"
+import { Link, PageProps } from "gatsby"
 import Layout from "./layout"
 import Tags from "./tags"
 
-const Posts = (props) => {
+type PageContext = {
+  previousPagePath: string
+  nextPagePath: string
+}
+
+const Posts: React.FC<PageProps<GatsbyTypes.PostsQuery, PageContext>> = (
+  props
+) => {
   const { data } = props
 
   return (

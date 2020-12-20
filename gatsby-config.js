@@ -30,6 +30,12 @@ module.exports = {
         head: true,
       },
     },
+    {
+      resolve: `gatsby-plugin-typegen`,
+      options: {
+        outputPath: `./__generated__/gatsby-types.d.ts`,
+      },
+    },
     `gatsby-plugin-react-helmet`,
     {
       resolve: `gatsby-transformer-remark`,

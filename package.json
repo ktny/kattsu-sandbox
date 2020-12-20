@@ -11,7 +11,8 @@
     "start": "npm run develop",
     "serve": "gatsby serve",
     "clean": "gatsby clean",
-    "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1"
+    "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
@@ -19,9 +20,11 @@
     "gatsby-awesome-pagination": "^0.3.6",
     "gatsby-image": "^2.7.0",
     "gatsby-plugin-google-analytics": "^2.8.0",
+    "gatsby-plugin-graphql-codegen": "^2.7.1",
     "gatsby-plugin-react-helmet": "^3.7.0",
     "gatsby-plugin-sass": "^2.7.0",
     "gatsby-plugin-sharp": "^2.10.1",
+    "gatsby-plugin-typegen": "^2.2.2",
     "gatsby-plugin-typography": "^2.8.0",
     "gatsby-remark-code-titles": "^1.1.0",
     "gatsby-remark-images": "^3.7.1",
@@ -39,7 +42,8 @@
     "typography": "^0.16.19"
   },
   "devDependencies": {
-    "prettier": "2.1.2"
+    "prettier": "2.1.2",
+    "typescript": "^4.1.3"
   },
   "repository": {
     "type": "git",

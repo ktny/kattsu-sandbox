@@ -2,7 +2,11 @@ import React from "react"
 import { Link } from "gatsby"
 import kebabCase from "lodash/kebabCase"
 
-const Tags = ({ tags }) => {
+type Props = {
+  readonly tags: string[]
+}
+
+const Tags: React.FC<Props> = ({ tags }) => {
   if (!tags) {
     return <></>
   }
