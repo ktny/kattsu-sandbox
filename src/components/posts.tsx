@@ -3,6 +3,8 @@ import { Link, PageProps } from "gatsby"
 import Layout from "./layout"
 import Tags from "./tags"
 import Bio from "./bio"
+import Pagination from "./pagination"
+import styles from "../styles/posts.module.scss"
 
 type PageContext = {
   previousPagePath: string
@@ -16,49 +18,26 @@ const Posts: React.FC<PageProps<GatsbyTypes.PostsQuery, PageContext>> = (
 
   return (
     <Layout {...props}>
-      <div className="post-list container">
-        {data.allMdx.nodes.map((node) => (
-          <article className="post-item" key={node.fields.slug}>
-            <small>
-              <time>{node.frontmatter.date}</time>
-            </small>
-            <h2 className="post-item-title">
-              <Link to={node.fields.slug}>{node.frontmatter.title}</Link>
-            </h2>
-            <Tags tags={node.frontmatter.tags} />
-          </article>
-        ))}
-        <nav aria-label="pagination">
-          <ul className="pagination">
-            <li className="pagination-item">
-              {props.pageContext.previousPagePath ? (
-                <Link
-                  to={props.pageContext.previousPagePath}
-                  className="pagination-item-link"
-                >
-                  ← 前へ
-                </Link>
-              ) : (
-                <></>
-              )}
-            </li>
-
-            <li className="pagination-item">
-              {props.pageContext.nextPagePath ? (
-                <Link
-                  to={props.pageContext.nextPagePath}
-                  className="pagination-item-link"
-                >
-                  次へ →
-                </Link>
-              ) : (
-                <></>
-              )}
-            </li>
-          </ul>
-        </nav>
+      <div className="container">
+        <main className="main">
+          <div className="box">
+            {data.allMdx.nodes.map((node) => (
+              <article className={styles.post} key={node.fields.slug}>
+                <small>
+                  <time>{node.frontmatter.date}</time>
+                </small>
+                <h2 className={styles.postTitle}>
+                  <Link to={node.fields.slug}>{node.frontmatter.title}</Link>
+                </h2>
+                <Tags tags={node.frontmatter.tags} />
+              </article>
+            ))}
+            <Pagination pageContext={props.pageContext}></Pagination>
+          </div>
+          <Bio />
+        </main>
+        {/* <aside className="aside">タグ一覧</aside> */}
       </div>
-      <Bio />
     </Layout>
   )
 }

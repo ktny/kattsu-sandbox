@@ -1,0 +1,35 @@
+@import "./style.scss";
+
+.title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 18px;
+}
+
+.inner {
+  display: flex;
+  margin-top: 16px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  margin-right: 10px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.right-block {
+  margin-top: 5px;
+}
+
+.name {
+  margin-bottom: 0;
+  line-height: 1.2;
+}
+
+.desc {
+  margin-bottom: 0;
+  font-size: 14px;
+}

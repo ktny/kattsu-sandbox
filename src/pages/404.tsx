@@ -4,8 +4,14 @@ import Layout from "../components/layout"
 
 const NotFoundPage: React.FC<PageProps> = (props) => {
   return (
-    <Layout {...props} showProfile={false}>
-      <h1>404 ページが見つかりません</h1>
+    <Layout {...props}>
+      <div className="container">
+        <main className="main">
+          <div className="box">
+            <h1>404 ページが見つかりません</h1>
+          </div>
+        </main>
+      </div>
     </Layout>
   )
 }

@@ -1,0 +1,27 @@
+@import "./style.scss";
+
+.header {
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  padding: 0.5rem;
+  background-color: $bg-light-color;
+  @media screen and (min-width: 960px) {
+    height: 4.5rem;
+    padding: 1rem;
+  }
+}
+
+.header-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: $text-color;
+  line-height: 1;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 0.4px;
+  @media screen and (min-width: 960px) {
+    font-size: 24px;
+  }
+}

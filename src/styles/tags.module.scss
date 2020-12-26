@@ -1,0 +1,19 @@
+@import "./style.scss";
+
+.tags {
+  display: flex;
+  margin-top: 8px;
+}
+
+.tag {
+  display: block;
+  margin-left: 10px;
+  padding: 0 8px;
+  border-radius: 2px;
+  font-size: 13px;
+  color: $white-color;
+  background-color: $accent-color;
+  &:first-of-type {
+    margin-left: 0;
+  }
+}

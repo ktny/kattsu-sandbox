@@ -1,6 +1,7 @@
 import React from "react"
 import { useStaticQuery, graphql } from "gatsby"
 import Img from "gatsby-image"
+import styles from "../styles/bio.module.scss"
 
 const Bio = () => {
   const data = useStaticQuery<GatsbyTypes.BioQuery>(
@@ -28,17 +29,17 @@ const Bio = () => {
   )
 
   return (
-    <section className="about container">
-      <h3 className="about-title">書いている人</h3>
-      <div className="bio">
-        <div className="bio-image">
+    <section className="box mt-2">
+      <h3 className={styles.title}>書いている人</h3>
+      <div className={styles.inner}>
+        <div className={styles.avatar}>
           <Img
             fixed={data.avatar.childImageSharp.fixed}
             alt={data.site.siteMetadata.author}
           />
         </div>
-        <div className="bio-text">
-          <p className="bio-name">
+        <div className={styles.rightBlock}>
+          <p className={styles.name}>
             <a
               href={data.site.siteMetadata.twitterUrl}
               target="_blank"
@@ -47,7 +48,7 @@ const Bio = () => {
               @{data.site.siteMetadata.author}
             </a>
           </p>
-          <p className="bio-desc">機械メーカーに勤めるwebエンジニアです。</p>
+          <p className={styles.desc}>機械メーカーに勤めるwebエンジニアです。</p>
         </div>
       </div>
     </section>

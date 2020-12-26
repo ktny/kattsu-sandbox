@@ -1,12 +1,13 @@
 import React from "react"
 import { Link } from "react-scroll"
+import styles from "../styles/toc.module.scss"
 
 const Toc = ({ items, depth }) => {
   console.log(items)
   return (
-    <ul className="toc-list">
+    <ul className={styles.list}>
       {items.map((item, i) => (
-        <li key={i} className={depth === 1 ? "heading1" : "heading2"}>
+        <li key={i} className={depth === 2 ? styles.heading2 : ""}>
           <Link
             activeClass="active"
             to={item.url.replace("#", "")}
@@ -14,7 +15,7 @@ const Toc = ({ items, depth }) => {
             smooth={true}
             offset={-10}
             duration={300}
-            className="toc-list-item"
+            className={styles.listItem}
           >
             {item.title}
           </Link>

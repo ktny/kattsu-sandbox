@@ -52,6 +52,9 @@ const typography = new Typography({
       textDecoration: "none",
       color: "#0073bc",
     },
+    "a:hover": {
+      opacity: 0.6,
+    },
     li: {
       marginBottom: 0,
     },
