@@ -64,3 +64,9 @@ code[class*="language-"],
 pre[class*="language-"] {
   border-radius: 0 !important;
 }
+
+.table-scroll {
+  width: 100%;
+  overflow: auto;
+  white-space: nowrap;
+}
