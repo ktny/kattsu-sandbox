@@ -8,9 +8,9 @@ require("dotenv").config()
 
 module.exports = {
   siteMetadata: {
-    title: "Kattsu Sandbox",
+    name: "Kattsu Sandbox",
+    url: "https://kattsu-sandbox.vercel.app",
     author: "kattsu",
-    siteUrl: "https://kattsu-sandbox.vercel.app",
     twitterUrl: `https://twitter.com/kattsu_3`,
     social: [
       {

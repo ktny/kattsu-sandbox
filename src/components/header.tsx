@@ -8,7 +8,7 @@ const Header: React.FC<PageProps> = ({ location }) => {
       query Header {
         site {
           siteMetadata {
-            title
+            name
           }
         }
       }
@@ -18,10 +18,10 @@ const Header: React.FC<PageProps> = ({ location }) => {
   return (
     <header className={styles.header}>
       {location.pathname === "/" ? (
-        <h1 className={styles.headerTitle}>{data.site.siteMetadata.title}</h1>
+        <h1 className={styles.headerTitle}>{data.site.siteMetadata.name}</h1>
       ) : (
         <Link to="/" className={styles.headerTitle}>
-          {data.site.siteMetadata.title}
+          {data.site.siteMetadata.name}
         </Link>
       )}
     </header>
