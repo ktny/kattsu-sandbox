@@ -1,0 +1,13 @@
+@import "./style.scss";
+
+.share {
+  display: flex;
+}
+
+.shareButton {
+  height: 20px;
+  margin-left: 0.5rem;
+  &:first-of-type {
+    margin-left: 0;
+  }
+}

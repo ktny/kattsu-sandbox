@@ -1,8 +1,10 @@
 import React from "react"
 import Layout from "../components/layout"
+import Helmet from "./helmet"
 import Tags from "../components/tags"
 import Toc from "../components/toc"
 import Bio from "../components/bio"
+import Share from "../components/share"
 import { PageProps } from "gatsby"
 import { MDXRenderer } from "gatsby-plugin-mdx"
 // import Img from "gatsby-image"
@@ -14,6 +16,10 @@ const Post: React.FC<PageProps<GatsbyTypes.PostQuery>> = (props) => {
 
   return (
     <Layout {...props}>
+      <Helmet title={post.frontmatter?.title}>
+        <script async src="//platform.twitter.com/widgets.js" />
+        <script async src="//b.st-hatena.com/js/bookmark_button.js" />
+      </Helmet>
       <div className="container">
         {/* <Img fixed={post.frontmatter.topImage.childImageSharp.fixed} /> */}
         <main className="main">
@@ -28,6 +34,7 @@ const Post: React.FC<PageProps<GatsbyTypes.PostQuery>> = (props) => {
             <section className={styles.postBody}>
               <MDXRenderer>{post.body}</MDXRenderer>
             </section>
+            <Share />
           </div>
           <Bio />
         </main>

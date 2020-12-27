@@ -1,6 +1,7 @@
 import React from "react"
 import { Link, PageProps } from "gatsby"
 import Layout from "./layout"
+import Helmet from "./helmet"
 import Tags from "./tags"
 import Bio from "./bio"
 import Pagination from "./pagination"
@@ -18,6 +19,7 @@ const Posts: React.FC<PageProps<GatsbyTypes.PostsQuery, PageContext>> = (
 
   return (
     <Layout {...props}>
+      <Helmet title="トップページ" />
       <div className="container">
         <main className="main">
           <div className="box">

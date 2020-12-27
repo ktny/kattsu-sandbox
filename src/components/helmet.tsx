@@ -1,8 +1,8 @@
 import React from "react"
-import { useStaticQuery, graphql, PageProps } from "gatsby"
+import { useStaticQuery, graphql } from "gatsby"
 import { Helmet as HelmetWrapper } from "react-helmet"
 
-const Helmet = () => {
+const Helmet = (props) => {
   const data = useStaticQuery<GatsbyTypes.HelmetQuery>(
     graphql`
       query Helmet {
@@ -18,7 +18,10 @@ const Helmet = () => {
   return (
     <HelmetWrapper>
       <html lang="ja" />
-      <title>{data.site.siteMetadata.title}</title>
+      <title>
+        {props.title} - {data.site.siteMetadata.title}
+      </title>
+      {props.children}
     </HelmetWrapper>
   )
 }
