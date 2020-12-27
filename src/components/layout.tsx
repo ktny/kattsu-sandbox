@@ -8,8 +8,8 @@ const Layout = (props) => {
   return (
     <>
       <Helmet />
-      <Header {...props} />
       <div className={styles.wrapper}>
+        <Header {...props} />
         {props.children}
         <Footer />
       </div>
