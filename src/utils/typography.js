@@ -58,6 +58,9 @@ const typography = new Typography({
     li: {
       marginBottom: 0,
     },
+    "li > ul": {
+      marginTop: 0,
+    },
     hr: {
       marginBottom: rhythm(10 / 16),
     },

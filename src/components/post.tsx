@@ -38,9 +38,13 @@ const Post: React.FC<PageProps<GatsbyTypes.PostQuery>> = (props) => {
           </div>
           <Bio />
         </main>
-        <aside className="aside">
-          <Toc items={post.tableOfContents.items} depth={1} />
-        </aside>
+        {post.tableOfContents.items ? (
+          <aside className="aside">
+            <Toc items={post.tableOfContents.items} depth={1} />
+          </aside>
+        ) : (
+          <></>
+        )}
       </div>
     </Layout>
   )

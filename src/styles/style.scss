@@ -70,3 +70,11 @@ pre[class*="language-"] {
   overflow: auto;
   white-space: nowrap;
 }
+
+.gatsby-resp-image-background-image {
+  padding-bottom: 0 !important;
+}
+
+.gatsby-resp-image-image {
+  height: auto !important;
+}

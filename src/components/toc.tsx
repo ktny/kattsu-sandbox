@@ -3,7 +3,6 @@ import { Link } from "react-scroll"
 import styles from "../styles/toc.module.scss"
 
 const Toc = ({ items, depth }) => {
-  console.log(items)
   return (
     <ul className={styles.list}>
       {items.map((item, i) => (

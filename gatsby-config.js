@@ -40,9 +40,9 @@ module.exports = {
           `gatsby-remark-relative-images`,
           {
             resolve: `gatsby-remark-images`,
-            options: {
-              maxWidth: 700,
-            },
+            // options: {
+            //   maxWidth: 700,
+            // },
           },
           {
             resolve: `gatsby-remark-prismjs`,
