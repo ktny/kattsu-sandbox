@@ -17,7 +17,7 @@ const Share = () => {
         <a
           href="https://b.hatena.ne.jp/entry/"
           className="hatena-bookmark-button"
-          data-hatena-bookmark-layout="basic-label-counter"
+          data-hatena-bookmark-layout="basic-label"
           data-hatena-bookmark-lang="ja"
           title="このエントリーをはてなブックマークに追加"
         >

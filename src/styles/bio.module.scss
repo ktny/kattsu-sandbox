@@ -4,32 +4,36 @@
   margin: 0;
   padding: 0;
   border: 0;
-  font-size: 18px;
+  font-size: 1.2rem;
 }
 
 .inner {
   display: flex;
-  margin-top: 16px;
+  margin-top: 1rem;
 }
 
 .avatar {
   width: 48px;
   height: 48px;
-  margin-right: 10px;
   border-radius: 50%;
   overflow: hidden;
+  box-shadow: 0px 0px 0px 1px;
+  margin-right: 1rem;
 }
 
-.right-block {
-  margin-top: 5px;
+.sns {
+  display: flex;
+  align-items: center;
 }
 
-.name {
-  margin-bottom: 0;
-  line-height: 1.2;
+.sns-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-left: 0.5rem;
 }
 
 .desc {
   margin-bottom: 0;
-  font-size: 14px;
 }

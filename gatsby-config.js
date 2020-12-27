@@ -12,16 +12,7 @@ module.exports = {
     siteUrl: "https://kattsu-sandbox.vercel.app",
     author: "kattsu",
     twitterUrl: `https://twitter.com/kattsu_3`,
-    social: [
-      {
-        name: `twitter`,
-        url: `https://twitter.com/kattsu_3`,
-      },
-      {
-        name: `github`,
-        url: `https://github.com/ktny`,
-      },
-    ],
+    githubUrl: `https://github.com/ktny`,
   },
   plugins: [
     {

@@ -4,7 +4,7 @@ const typography = new Typography({
   title: "kattsu-sandbox",
   baseFontSize: "16px",
   baseLineHeight: 2.0,
-  scaleRatio: 1.8,
+  scaleRatio: 1.5,
   googleFonts: [
     {
       name: "Noto+Sans+JP",
@@ -13,8 +13,8 @@ const typography = new Typography({
   ],
   headerFontFamily: ["Noto Sans JP", "sans-serif"],
   bodyFontFamily: ["Noto Sans JP", "sans-serif"],
-  headerColor: "#272724",
-  bodyColor: "#272724",
+  headerColor: "#222831",
+  bodyColor: "#222831",
   blockMarginBottom: 1,
   includeNormalize: true,
   overrideStyles: ({ adjustFontSizeTo, rhythm, scale }, options, styles) => ({
@@ -50,7 +50,7 @@ const typography = new Typography({
     },
     a: {
       textDecoration: "none",
-      color: "#0073bc",
+      color: "#3f72af",
     },
     "a:hover": {
       opacity: 0.6,
