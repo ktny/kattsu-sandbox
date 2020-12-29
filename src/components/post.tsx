@@ -7,7 +7,6 @@ import Bio from "../components/bio"
 import Share from "../components/share"
 import { PageProps } from "gatsby"
 import { MDXRenderer } from "gatsby-plugin-mdx"
-// import Img from "gatsby-image"
 import styles from "../styles/post.module.scss"
 
 const Post: React.FC<PageProps<GatsbyTypes.PostQuery>> = (props) => {
@@ -21,7 +20,6 @@ const Post: React.FC<PageProps<GatsbyTypes.PostQuery>> = (props) => {
         <script async src="//b.st-hatena.com/js/bookmark_button.js" />
       </Helmet>
       <div className="container">
-        {/* <Img fixed={post.frontmatter.topImage.childImageSharp.fixed} /> */}
         <main className="main">
           <div className="box">
             <section>

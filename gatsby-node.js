@@ -17,9 +17,10 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
 
 exports.createPages = async ({ graphql, actions }) => {
   const { createPage } = actions
+  const status = process.env.NODE_ENV === "production" ? "published/" : ""
   const postsResult = await graphql(`
     query {
-      allMdx {
+      allMdx(filter: { frontmatter: { status: { regex: "/${status}/" } } }) {
         edges {
           node {
             fields {
@@ -44,6 +45,7 @@ exports.createPages = async ({ graphql, actions }) => {
       component: path.resolve(`./src/templates/post.tsx`),
       context: {
         slug: node.fields.slug,
+        status: `/${status}/`,
       },
     })
     node.frontmatter.tags.map((tag) => tagSet.add(tag))
@@ -56,6 +58,9 @@ exports.createPages = async ({ graphql, actions }) => {
     itemsPerPage: 10,
     pathPrefix: "/",
     component: path.resolve(`./src/templates/posts.tsx`),
+    context: {
+      status: `/${status}/`,
+    },
   })
 
   // タグごとの記事一覧ページを作成
@@ -68,6 +73,7 @@ exports.createPages = async ({ graphql, actions }) => {
       component: path.resolve(`./src/templates/tag-posts.tsx`),
       context: {
         tag: tag,
+        status: `/${status}/`,
       },
     })
   })
