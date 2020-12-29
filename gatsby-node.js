@@ -17,7 +17,7 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
 
 exports.createPages = async ({ graphql, actions }) => {
   const { createPage } = actions
-  const status = process.env.NODE_ENV === "production" ? "published/" : ""
+  const status = process.env.NODE_ENV === "production" ? "published" : ""
   const postsResult = await graphql(`
     query {
       allMdx(filter: { frontmatter: { status: { regex: "/${status}/" } } }) {
