@@ -46,17 +46,15 @@ Gatsby + Netlify + Contentful という構成をよく見ますが、Contentful 
 - エディタの書き心地がよくない
 
 Contentful のような HeadlessCMS を使えば DB 含むバックエンドが不要ということで WordPress などの代替としてはいいのかなと思いますが、Gatsby で markdown ファイルからブログを作る分にはもともとバックエンド不要ですし、markdown で十分構造化されるので大してメリットが見い出せませんでした。
+サイトと一緒に markdown ファイルでコンテンツを管理するメリットは GitHub に草が生えやすいことが知られています。
 
 ホスティングサービスは今回は Vercel を使いましたが特殊な機能も使ってないので Netlify でも特に変わらないと思います。
 
 ## Gatsby で markdown からページが作られる仕組み
 
 上で挙げたことのほとんどはプラグインを組み合わせれば実現できました。
-ただ、根本的なところで、Gatsby でページが作られる仕組みの流れが最初よくわからなかったのでフローを図に表しておきます。
-
-![gatsby-create-pages-flow](./gatsby-create-pages-flow.png)
-
-Gatsby でページを作る仕組みは以下の 3 種類ありますが、markdown から記事ページを作るには 3 番目の gatsby-node.js の仕組みを採用します。
+ただ、根本的なところで、Gatsby でページが作られる仕組みの流れが最初よくわからなかったのでまとめておきます。
+まず、Gatsby でページを作る仕組みは以下の 3 種類ありますが、markdown から記事ページを作るには 3 番目の gatsby-node.js の仕組みを採用します。
 [Routing | Gatsby](https://www.gatsbyjs.com/docs/reference/routing/creating-routes/)
 
 | 仕組み                   | 用途                             |
@@ -66,9 +64,13 @@ Gatsby でページを作る仕組みは以下の 3 種類ありますが、mark
 | gatsby-node.js           | 上以外の用途での複数の動的ページ |
 
 gatsby-node.js は`gatsby build`などのビルド時に走ります。
-gatsby-node.js 内で サイト内の markdown ファイルを graphql により取得し、そのファイルパスなどに合わせて createPages API を使用することで markdown を元にページルーティングを作ることができます。
+gatsby-node.js 内で サイト内の markdown ファイルの情報を GraphQL により取得し、そのファイルパスなどに合わせて createPages API を使用することで markdown を元にページルーティングを作ることができます。
 
-```js
+![gatsby-create-pages-flow](./gatsby-create-pages-flow.png)
+
+このとき取得する markdown ファイルの情報は slug などルーティングを作るために必要な情報だけで、実際に記事の内容となる markdown の中身の情報などは template ファイルで改めて GraphQL で取得します。
+
+```js:title=gatsby-node.js
 const path = require(`path`)
 
 // ページ作成前にslugフィールドをファイルパスから作成しておく
@@ -117,7 +119,7 @@ exports.createPages = async ({ graphql, actions }) => {
 }
 ```
 
-なお、この gatsby-node.js を動かすためには、`gatsby-source-filesystem`, `gatsby-plugin-mdx` が必要になるかと思います。
+なお、この gatsby-node.js を動かすためには、`gatsby-source-filesystem`, `gatsby-plugin-mdx` などのプラグインが必要になるかと思います。
 あとは createPage の component オプションで指定した jsx,tsx ファイルにより個々のページごとに解決がなされ、MDXRenderer などにより markdown を DOM に変換できれば記事ページができあがります。
 
 ## おわりに
