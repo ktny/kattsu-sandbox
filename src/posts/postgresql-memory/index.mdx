@@ -41,7 +41,7 @@ postgres  9082  0.0  0.1 214824 11688 ?        Ss   02:11   0:00 postgres: pguse
 複数のプロセスから PostgreSQL が成り立っていることがわかりますが、重要なのは下記図のように全体を管理するマスタプロセス、walwriter のように PostgreSQL の重要な作業を担うプロセス、接続ごとに作られるバックエンドプロセスの**3 種に分けられるマルチプロセス構成**であることです。
 （ちなみに MySQL はマルチプロセス構成ではなく、マルチスレッド構成なのでこのように複数のプロセスに分かれていません。）
 
-![image.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/65636/7853b979-3dc3-d14d-264a-a18718f03adf.png)
+![postgres-processes](./postgres-processes.png)
 
 重要な作業を担うプロセスたちについては説明を割愛しますが、これらのプロセスも当然メモリを使用しています。
 バックエンドプロセスは`pguser pguser [local] idle`などとなっているもので、これらのプロセスは接続ごとに自分だけのメモリ域を持ちます。詳しくは次で説明します。

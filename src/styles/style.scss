@@ -71,14 +71,20 @@ pre[class*="language-"] {
   white-space: nowrap;
 }
 
+.gatsby-resp-image-wrapper {
+  white-space: normal !important;
+}
+
 .gatsby-resp-image-background-image {
   padding-bottom: 0 !important;
 }
 
 .gatsby-resp-image-image {
+  position: relative !important;
   height: auto !important;
 }
 
 .gatsby-resp-image-link {
   display: inline !important;
+  white-space: normal !important;
 }
