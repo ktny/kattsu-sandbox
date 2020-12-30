@@ -4,11 +4,8 @@ import { graphql } from "gatsby"
 export default Post
 
 export const query = graphql`
-  query Post($slug: String!, $draft: [Boolean]!) {
-    mdx(
-      fields: { slug: { eq: $slug } }
-      frontmatter: { draft: { in: $draft } }
-    ) {
+  query Post($slug: String!) {
+    mdx(fields: { slug: { eq: $slug } }) {
       slug
       body
       tableOfContents(maxDepth: 3)

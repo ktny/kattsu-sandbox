@@ -45,7 +45,6 @@ exports.createPages = async ({ graphql, actions }) => {
       component: path.resolve(`./src/templates/post.tsx`),
       context: {
         slug: node.fields.slug,
-        draft: draft,
       },
     })
     node.frontmatter.tags.map((tag) => tagSet.add(tag))

@@ -23,14 +23,14 @@ const typography = new Typography({
       letterSpacing: "0.01rem",
       marginBottom: rhythm(2 / 16),
     },
-    "h2,h3": {
+    h2: {
       lineHeight: 1.4,
       paddingBottom: rhythm(4 / 16),
       borderBottom: "1px solid #ddd",
       marginTop: rhythm(32 / 16),
       marginBottom: rhythm(10 / 16),
     },
-    "h4,h5,h6": {
+    "h3,h4,h5,h6": {
       lineHeight: 1.4,
       marginTop: rhythm(24 / 16),
       marginBottom: rhythm(10 / 16),
@@ -73,7 +73,7 @@ const typography = new Typography({
       color: `#757575`,
     },
     "pre[class*='language-']": {
-      marginBottom: rhythm(16 / 16),
+      // marginBottom: rhythm(16 / 16),
     },
     strong: {
       background: "linear-gradient(transparent 80%, #ff99ff 60%)",
