@@ -4,10 +4,10 @@ import { graphql } from "gatsby"
 export default Posts
 
 export const query = graphql`
-  query Posts($skip: Int!, $limit: Int!, $status: String!) {
+  query Posts($skip: Int!, $limit: Int!, $draft: [Boolean]!) {
     allMdx(
       sort: { fields: [frontmatter___date], order: DESC }
-      filter: { frontmatter: { status: { regex: $status } } }
+      filter: { frontmatter: { draft: { in: $draft } } }
       skip: $skip
       limit: $limit
     ) {

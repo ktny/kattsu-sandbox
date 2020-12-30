@@ -4,12 +4,10 @@ import { graphql } from "gatsby"
 export default Posts
 
 export const query = graphql`
-  query TagPosts($skip: Int!, $limit: Int!, $tag: String!, $status: String!) {
+  query TagPosts($skip: Int!, $limit: Int!, $tag: String!, $draft: [Boolean]!) {
     allMdx(
       sort: { fields: [frontmatter___date], order: DESC }
-      filter: {
-        frontmatter: { status: { regex: $status }, tags: { in: [$tag] } }
-      }
+      filter: { frontmatter: { draft: { in: $draft }, tags: { in: [$tag] } } }
       skip: $skip
       limit: $limit
     ) {

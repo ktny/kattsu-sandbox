@@ -4,10 +4,10 @@ import { graphql } from "gatsby"
 export default Post
 
 export const query = graphql`
-  query Post($slug: String!, $status: String!) {
+  query Post($slug: String!, $draft: [Boolean]!) {
     mdx(
       fields: { slug: { eq: $slug } }
-      frontmatter: { status: { regex: $status } }
+      frontmatter: { draft: { in: $draft } }
     ) {
       slug
       body
