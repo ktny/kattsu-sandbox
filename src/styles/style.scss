@@ -2,7 +2,8 @@ $bg-dark-color: #222831;
 $bg-light-color: #f9f7f7;
 $text-color: #222831;
 $white-color: #fff;
-$accent-color: #3f72af;
+$link-color: #3f72af;
+$accent-color: #fc5185;
 
 .container {
   @media screen and (min-width: 960px) {
@@ -50,19 +51,23 @@ $accent-color: #3f72af;
 }
 
 .gatsby-code-title {
-  background: $bg-dark-color;
+  background: #6a7d2f;
   color: $white-color;
-  margin-bottom: -0.65em;
-  padding: 0.7rem 1.05rem;
-  font-size: 0.8em;
-  line-height: 0.2;
+  margin-bottom: -0.45rem;
+  padding: 0.2rem 0.7rem 0.3rem;
+  font-size: 0.8rem;
   border-radius: 4px 4px 0 0;
-  display: table;
 }
 
-code[class*="language-"],
+:not(pre) > code[class*="language-"] {
+  background-color: #ffe0e0;
+}
+
 pre[class*="language-"] {
-  border-radius: 0 !important;
+  border-radius: 0 0 4px 4px !important;
+  code {
+    font-size: 0.9rem !important;
+  }
 }
 
 .table-scroll {

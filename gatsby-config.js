@@ -9,7 +9,7 @@ require("dotenv").config()
 module.exports = {
   siteMetadata: {
     title: "Kattsu Sandbox",
-    siteUrl: "https://kattsu-sandbox.vercel.app",
+    siteUrl: "https://katsusand.work",
     author: "kattsu",
     twitterUrl: `https://twitter.com/kattsu_3`,
     githubUrl: `https://github.com/ktny`,
@@ -79,8 +79,6 @@ module.exports = {
             resolve: `gatsby-remark-images`,
             options: {
               maxWidth: 800,
-              // wrapperStyle: (fluidResult) =>
-              //   `flex:${_.round(fluidResult.aspectRatio, 2)};`,
             },
           },
           {

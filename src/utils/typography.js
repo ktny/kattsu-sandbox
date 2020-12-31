@@ -72,9 +72,6 @@ const typography = new Typography({
       borderLeft: `${rhythm(2 / 16)} solid #ccc`,
       color: `#757575`,
     },
-    "pre[class*='language-']": {
-      // marginBottom: rhythm(16 / 16),
-    },
     strong: {
       background: "linear-gradient(transparent 80%, #ff99ff 60%)",
     },
