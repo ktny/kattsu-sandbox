@@ -9,7 +9,7 @@ require("dotenv").config()
 module.exports = {
   siteMetadata: {
     title: "Kattsu Sandbox",
-    siteUrl: "https://katsusand.work",
+    siteUrl: "https://katsusand.dev",
     author: "kattsu",
     twitterUrl: `https://twitter.com/kattsu_3`,
     githubUrl: `https://github.com/ktny`,
