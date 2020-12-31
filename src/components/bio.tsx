@@ -10,8 +10,12 @@ const Bio = () => {
         site {
           siteMetadata {
             author
-            twitterUrl
-            githubUrl
+            social {
+              twitter
+              github
+              qiita
+              atcoder
+            }
           }
         }
         avatar: file(absolutePath: { regex: "/avatar.png/" }) {
@@ -26,6 +30,28 @@ const Bio = () => {
           }
         }
         github: file(absolutePath: { regex: "/github.png/" }) {
+          childImageSharp {
+            fixed(width: 24, height: 24) {
+              base64
+              width
+              height
+              src
+              srcSet
+            }
+          }
+        }
+        qiita: file(absolutePath: { regex: "/qiita.png/" }) {
+          childImageSharp {
+            fixed(width: 24, height: 24) {
+              base64
+              width
+              height
+              src
+              srcSet
+            }
+          }
+        }
+        atcoder: file(absolutePath: { regex: "/atcoder.png/" }) {
           childImageSharp {
             fixed(width: 24, height: 24) {
               base64
@@ -54,7 +80,7 @@ const Bio = () => {
           <div className={styles.sns}>
             <div className={styles.name}>
               <a
-                href={data.site.siteMetadata.twitterUrl}
+                href={data.site.siteMetadata.social.twitter}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -63,12 +89,36 @@ const Bio = () => {
             </div>
             <div className={styles.snsIcon}>
               <a
-                href={data.site.siteMetadata.githubUrl}
+                href={data.site.siteMetadata.social.github}
                 target="_blank"
                 rel="noreferrer"
               >
                 <Img
                   fixed={data.github.childImageSharp.fixed}
+                  alt={data.site.siteMetadata.author}
+                />
+              </a>
+            </div>
+            <div className={styles.snsIcon}>
+              <a
+                href={data.site.siteMetadata.social.qiita}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Img
+                  fixed={data.qiita.childImageSharp.fixed}
+                  alt={data.site.siteMetadata.author}
+                />
+              </a>
+            </div>
+            <div className={styles.snsIcon}>
+              <a
+                href={data.site.siteMetadata.social.atcoder}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Img
+                  fixed={data.atcoder.childImageSharp.fixed}
                   alt={data.site.siteMetadata.author}
                 />
               </a>

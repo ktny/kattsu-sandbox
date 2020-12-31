@@ -11,8 +11,12 @@ module.exports = {
     title: "Kattsu Sandbox",
     siteUrl: "https://katsusand.dev",
     author: "kattsu",
-    twitterUrl: `https://twitter.com/kattsu_3`,
-    githubUrl: `https://github.com/ktny`,
+    social: {
+      twitter: `https://twitter.com/kattsu_3`,
+      github: `https://github.com/ktny`,
+      qiita: `https://qiita.com/katsunory`,
+      atcoder: `https://atcoder.jp/users/ktnyori`,
+    },
   },
   plugins: [
     {
