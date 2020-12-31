@@ -5,16 +5,20 @@ $white-color: #fff;
 $link-color: #3f72af;
 $accent-color: #fc5185;
 
+$break-point: 960px;
+$main-width: 800px;
+$aside-width: 300px;
+
 .container {
-  @media screen and (min-width: 960px) {
+  @media screen and (min-width: $break-point) {
     display: flex;
     justify-content: center;
   }
 }
 
 .main {
-  @media screen and (min-width: 960px) {
-    width: 960px;
+  @media screen and (min-width: $break-point) {
+    width: $main-width;
     position: relative;
     z-index: 1000;
   }
@@ -23,7 +27,7 @@ $accent-color: #fc5185;
 .box {
   padding: 1rem;
   background-color: $bg-light-color;
-  @media screen and (min-width: 960px) {
+  @media screen and (min-width: $break-point) {
     padding: 2rem;
     border-radius: 4px;
   }
@@ -31,9 +35,9 @@ $accent-color: #fc5185;
 
 .aside {
   display: none;
-  @media screen and (min-width: 960px) {
+  @media screen and (min-width: $break-point) {
     display: block;
-    width: 300px;
+    width: $aside-width;
     height: 100%;
     margin-left: 1rem;
     padding: 1rem;
