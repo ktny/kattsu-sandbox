@@ -1,0 +1,211 @@
+---
+title: "GoogleのPageSpeedAPIで複数サイトの表示速度をGoogleスプレッドシートに毎週自動で書き出す"
+date: "2018-03-23"
+tags: ["JavaScript", "GoogleAppsScript"]
+draft: false
+---
+
+## Google PageSpeed Insights で複数サイトを一度に計測したい
+
+[Google PageSpeed Insights](https://developers.google.com/speed/pagespeed/insights/?hl=ja)というサービスではサイトの速度のスコアを計測することができるのですが、一度にひとつのサイトしか計測できないので複数サイトを一度に計測したい場合にかなり時間がかかるということがありました。
+そこでこのサービスの **API を利用して複数サイトを一気に計測**してみたいと思います。
+いろんな方法があるのですが、今回は GoogleAppScript を使って Google スプレッドシートに書き出してみたいと思います。
+やってることとしてはスプレッドシートの操作なので ExcelVBA に近いのですが、GoogleAppScript は Javascript の記法で書けるので ExcelVBA で書くよりも汎用的で勉強になります。
+
+最終的に今回のスクリプトでは下記の機能を実装しました。
+
+- 複数 URL を GooglePageSpeedAPI にかけた結果を Google スプレッドシートに書き出す
+- 上記作業が毎週決まった曜日と時間帯で自動で実行されるようにする
+- 作業が完了したら Chatwork で連絡されるようにする
+
+今回できたスクリプト。
+https://github.com/ktny/auto_multi_pagespeed_insights
+
+## Google スプレッドシートと連携した GoogleAppScript を書く
+
+まず、おもむろに Google スプレッドシートを作成します。
+A 列に複数の URL、B〜列にスコアが記入される想定です。
+また、PageSpeedInsight では PC、SP それぞれのページ速度のスコアを取得することが可能ですが、今回はシートごとに「?\_PC」「?\_SP」のようなシート名からどちらのスコアを取得するかを決めたいと思います。
+次に、上メニューのツール > スクリプトエディタからスクリプトエディタを立ち上げます。
+プロジェクト名とスクリプトファイル名を適当に決め次の関数を記述します。
+
+```js
+/**
+ * ページの表示速度を測定する
+ */
+function insightPagespeed() {
+  // スプレッドシート全体に関わる変数
+  var API_TOKEN_PAGESPEED = getScriptProperty("API_TOKEN_PAGESPEED")
+  var ss = SpreadsheetApp.getActiveSpreadsheet()
+  var sheets = ss.getSheets() // スプレッドシート内の全シートを取得
+
+  // 各シートごとに関わる変数
+  var sheetIndex = getScriptProperty("sheetIndex")
+    ? parseInt(getScriptProperty("sheetIndex"))
+    : 0 // 何番目のシートを処理するか
+  var sheet = sheets[sheetIndex]
+  var lastRow = sheet.getLastRow() // そのシートの最終行を取得
+  var today = Moment.moment().format("M月D日")
+
+  // PageSpeedInsightsAPIのリクエストに関わる変数
+  var device = sheet.getName().substr(-2) // シート名の後ろ2文字を切り出してデバイスを取得
+  var strategy = device === "PC" ? "desktop" : "mobile" // デバイス別にクエリの値を取得
+  // 同一シート内の各処理ごとに関わる変数
+  var row = getScriptProperty("row") ? parseInt(getScriptProperty("row")) : 2 // 何番目の行から処理するか
+  var urls = sheet.getRange(row, 1, lastRow - row + 1, 1).getValues() // URL配列を現在の行から最後まで取得
+  var scores = []
+
+  // 再起動用に開始時間を取得
+  var start = Moment.moment()
+
+  // 各行のURLのページスピード書き込みの処理が途中であれば最終列を、なければその次の列を取得する
+  var column
+  if (row > 2) {
+    column = sheet.getLastColumn()
+  } else {
+    column = sheet.getLastColumn() + 1
+    sheet.getRange(1, column).setValue(today) // 今日の日付を1行目に書き込む
+  }
+
+  Logger.log(
+    sheetIndex + "シート目" + column + "列" + row + "行目からのURLを処理中..."
+  )
+
+  // 取得した全URLに対して処理
+  for (var i = 0; i < urls.length; i++) {
+    // URLが空の場合はスキップ
+    var url = urls[i][0]
+    if (!url) continue
+
+    // リクエストURLを作成
+    var request =
+      "https://www.googleapis.com/pagespeedonline/v2/runPagespeed?url=" +
+      url +
+      "&key=" +
+      API_TOKEN_PAGESPEED +
+      "&strategy=" +
+      strategy
+
+    // URLをAPIに投げてみてエラーが返ってくる場合はログに残す
+    try {
+      var response = UrlFetchApp.fetch(request, { muteHttpExceptions: true })
+    } catch (err) {
+      Logger.log(err)
+      return err
+    }
+
+    // 返ってきたjsonをパース
+    var parsedResult = JSON.parse(response.getContentText())
+    var score = parsedResult.ruleGroups
+      ? parsedResult.ruleGroups.SPEED.score
+      : "-"
+
+    // ページスピードスコアをscores配列に追加
+    scores.push([score])
+
+    // 現在時間を取得して、開始から5分経過していたらforループ処理を中断して再起動
+    var now = Moment.moment()
+    if (now.diff(start, "minutes") >= 5) {
+      Logger.log(
+        "5分経過しました。タイムアウト回避のため処理を中断して再起動します。"
+      )
+      break
+    }
+  }
+
+  // 取得したスコアを一度に書き込む
+  sheet.getRange(row, column, scores.length, 1).setValues(scores)
+  Logger.log(
+    sheetIndex +
+      "シート目" +
+      column +
+      "列" +
+      row +
+      "行目から" +
+      (row + scores.length) +
+      "行目まで入力を行いました。"
+  )
+
+  // rowを次の再起動用に設定
+  row = row + scores.length
+  setScriptProperty("row", row)
+
+  // 最終行まで処理していない場合は次の関数を再起動。最終行まで処理している場合は保存していた行を削除
+  if (row < lastRow) {
+    setTrigger("insightPagespeed")
+  } else {
+    deleteScriptProperty("row")
+
+    sheetIndex++
+
+    // sheetIndexをスクリプトプロパティにセット。最終シートまで処理した場合はスクリプトプロパティを全て削除してChatworkで結果を共有
+    if (sheetIndex < sheets.length) {
+      setScriptProperty("sheetIndex", sheetIndex)
+      setTrigger("insightPagespeed")
+    } else {
+      deleteScriptProperty("sheetIndex")
+      deleteTrigger()
+      sendMessage()
+    }
+  }
+}
+```
+
+ページ速度を取得するメインの関数です。
+API_TOKEN_PAGESPEED には自分の API_KEY を登録します。
+API_KEY の取得は、まず[GoogleDeveloversConsole - API Manager](https://console.developers.google.com/apis/api/)を開き、PageSpeed Insights API を選択します。
+画面上で API の有効、無効を選択できるので「有効」にします。
+次に API を使用するために「認証情報を作成」という項目が出てくるので作成します。
+英大文字小文字記号の何桁かの文字列が出てくるのでそれが API_KEY になります。
+
+以下注意点的なものを書きます。
+
+### ver2 の API を使用しよう
+
+PageSpeed の API には ver1 と 2 があり、今はどちらも使えるのですがなるべく ver2 を使った方が良さそうです。
+API に投げる URL の v2 という部分で ver2 を指定します。v1 なら ver1 になります。
+詳しく調べたわけではないのですが、例えば ver2 だと mobile で速度のスコアだけでなくユーザビリティのスコアを出すことができるなど、返ってくる JSON も多少異なっています。
+上記コードは ver2 用のものなので ver1 では動かない可能性があります。
+
+### scriptProperty について
+
+API など表に出したくないものや、1 回の処理で終わりでなく複数の処理で使いまわしたい変数をスプレッドシートの裏に持っておくことができるのが scriptProperty です。
+`PropertiesService.getScriptProperties().getProperty(key)`などとして書くことができます。
+今回は長いので別に function を作りました。
+便利なのでどんどん使っていきましょう。
+
+### Moment などの便利ライブラリをリソース > ライブラリから登録
+
+ライブラリのプロジェクトキーを入れる必要があります。
+ググれば出てきます。
+
+### GoogleAppsScript の連続実行時間
+
+連続して実行できる時間に制限があり、おおよそ 5 分程度です。
+なので、複数 URL の数が少ないときはいいですが、多すぎて 5 分以内に実行できない場合は一度処理を止め、再度途中から実行する必要があります。
+
+### トリガー機能で自動実行する
+
+毎週決まった曜日と時間帯に実行するのは、コードではなくプロジェクトのトリガー機能で行います。
+メニューの時計マークをクリックし、メインの関数を時間手動型で好きなタイミングで設定します。
+
+## GoogleAppScript を実行してみる
+
+API_KEY を先程のコードに入れて、スプレッドシートの A2〜11 になんらかの URL を入れてみます。
+また、わかりやすいように A1 に「URL」と入れておきます。
+次にスクリプトエディタの実行ボタンをクリックして実行します。
+初回はスクリプトを実行するのに許可を求められることがあるので普通に許可します。
+
+成功すると PageSpeed の速度を求めることができます。
+また、残したログはスクリプトエディタの表示 > ログから見ることができます。
+
+### スプレッドシート内にボタンを置くこともできる
+
+今回は自動実行なので必要ないですが、スプレッドシート内にボタンを置いてそこから実行することもできます。
+挿入 > 図形描画から図形を書くことができるので、図形から四角形でも描画し、図形に「実行」などとテキストを書き保存します。
+図形がスプレッドシートに配置されるので、図形上で右クリックなどをすると右上に出る逆三角形のメニューを開き、「スクリプトを割り当て」を選びます。
+ここは function 名を登録しボタンをクリックします。
+
+### スコアによって色分けする
+
+こちらはスプレッドシート側の機能ですが、Excel のようにセル全体を選択して、表示形式 > 条件付き書式 > カラースケールで最小値と最大値などを設定すれば、ページスピードのスコアによって色分けがなされ、見やすくなります。

@@ -6,7 +6,7 @@ const Toc = ({ items, depth }) => {
   return (
     <ul className={styles.list}>
       {items.map((item, i) => (
-        <li key={i} className={depth === 2 ? styles.heading2 : ""}>
+        <li key={i} className={depth === 2 ? styles.heading2 : styles.heading1}>
           <Link
             activeClass="active"
             to={item.url.replace("#", "")}

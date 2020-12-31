@@ -1,0 +1,222 @@
+---
+title: "CloudFront+Lambda+APIGatewayでS3の画像をクエリパラメータに応じてリサイズする"
+date: "2018-02-23"
+tags: ["AWS", "Lambda", "CloudFront", "S3"]
+draft: false
+---
+
+## 概要
+
+`https://example.cloudfront.net/sample.png?w=200`
+上記のように CloudFront 経由で S3 の画像を取得する際に w クエリーに値に応じて画像をリサイズするようなシステムを作ります。
+
+主に下記記事を参考にさせていただきましたが、いくつか詰まったところがありましたのでそこを中心に自分用にまとめなおしています。
+[API Gateway でサーバレスな画像リサイズ API を作る - Qiita](https://qiita.com/akitsukada/items/e6d8fe68c49973d1edf6)
+
+また、今回もともと CloudFront を使用していたのと事情もあって CloudFront 前提で作成していますが、ゼロから最適化された画像を取得するシステムを構築するのであれば Fastly など別の CDN を使用した方がいいかもしれません。
+
+## やりたいこと
+
+- ページ高速化のため S3 に保存している画像を CloudFront 経由で最適化されたサイズで取得する
+- 一度リサイズされた画像は CloudFront にキャッシュされている状態にし、なるべく何度も Lambda が走らないようにする
+- 取得画像のレスポンスには Cache-Control ヘッダをつけブラウザキャッシュも行われるようにする
+
+## やったこと
+
+### 1. Lambda でリサイズ用の function を作成する
+
+まず、関数の新規作成を行います。
+設計図（BluePrint）にサンプルとなる関数がいくつかあるのでそれを元に作成します。
+今回は s3-get-object という S3 からオブジェクトを取得する Node.js の関数を元に作成しましたが、imagemagick を使用する image-processing-service という関数もリサイズの処理が参考になりました。
+
+ロールは S3 のオブジェクトの読み取り権限があるロールを設定します。
+特定のバケットにのみアクセスさせたい場合はそのようなポリシーを持ったロールにする必要があります。
+
+最終的に下記の関数を作成しました。
+
+```js
+"use strict"
+
+console.log("Loading function")
+
+const aws = require("aws-sdk")
+const s3 = new aws.S3({ apiVersion: "2006-03-01" })
+const im = require("imagemagick")
+const fs = require("fs")
+
+exports.handler = (event, context, callback) => {
+  // bucketはs3のバケットを静的に指定。keyはリクエストされたfilenameから取ってくる
+  const bucket = "your_bucket_name"
+  const key = event.pathParameters.filename
+  const params = {
+    Bucket: bucket,
+    Key: key,
+  }
+
+  console.log(event)
+
+  // s3からオブジェクトを取得する
+  s3.getObject(params, (err, data) => {
+    if (err) {
+      console.log(err)
+      const message = `${key}をS3から取得するのに失敗しました。`
+      console.log(message)
+      callback(message)
+    } else {
+      // contentTypeと拡張子を取得
+      const contentType = data.ContentType
+      const extension = contentType.split("/").pop()
+
+      // 一時的にS3から取得した画像を置く仮パスを定義
+      const tmpFile = `/tmp/inputFile.${extension}`
+      const buffer = new Buffer(data.Body, "base64")
+
+      // 仮パスに画像を置いて画像のサイズ情報を取得する
+      fs.writeFileSync(tmpFile, buffer)
+      const originBuffer = new Buffer(fs.readFileSync(tmpFile)).toString(
+        "base64"
+      )
+
+      im.identify(tmpFile, (err, output) => {
+        fs.unlinkSync(tmpFile)
+        if (err) {
+          console.log("Identify operation failed:", err)
+          callback(err)
+        } else {
+          console.log("Identify operation completed successfully")
+          const originWidth = output.width
+
+          // 返すレスポンスを定義
+          const response = {
+            statusCode: 200,
+            isBase64Encoded: true,
+            headers: {
+              "Content-Type": contentType,
+              "Cache-Control": "max-age=864000",
+            },
+          }
+
+          // wクエリーが取得できなければオリジンのサイズをリサイズサイズとする
+          // 強制的にいくつかの大きさまでリサイズしたければここで静的に定義してもいい
+          let eventWidth = originWidth
+          if (event.queryStringParameters != null) {
+            eventWidth = event.queryStringParameters.w
+          }
+
+          // 取得した画像サイズがリサイズサイズよりも大きければリサイズする
+          if (originWidth > eventWidth) {
+            im.resize(
+              {
+                srcData: data.Body,
+                format: extension,
+                width: eventWidth,
+                quality: 0.6,
+                progressive: true,
+              },
+              function (err, stdout, stderr) {
+                if (err) {
+                  console.log(err)
+                  const message = `${key}のリサイズに失敗しました。`
+                  console.log(message)
+                  context.done(message, err)
+                } else {
+                  // リサイズした画像のbase64形式をレスポンスボディとして追加して返す
+                  response["body"] = new Buffer(stdout, "binary").toString(
+                    "base64"
+                  )
+                  callback(null, response)
+                }
+              }
+            )
+          } else {
+            // 元画像のbase64形式をレスポンスボディとして追加して返す
+            response["body"] = originBuffer
+            callback(null, response)
+          }
+        }
+      })
+    }
+  })
+}
+```
+
+#### ImageMagick で画像の元のサイズを取得し、それより大きければリサイズするようにする
+
+全ての画像について一律でリサイズしようとすると、もともとリサイズしたかったサイズよりも小さい画像もリサイズしてしまうことになります。
+ページ高速化のためにリサイズしているのにそれでは本末転倒なので、元のサイズを取得するために ImageMagick の identify メソッドを使用しています。
+もし一律でリサイズしてもよければこの辺の処理は不要になります。
+
+#### APIGateway で Lambda プロキシ統合を使用することで response オブジェクトを返すことができる
+
+APIGateway の設定についてはまた後述するのですが、Cache-Control ヘッダをつけるために Lambda でレスポンスオブジェクトなどを返したかったのですが、なかなかこの方法がわかりませんでした。
+最終的に下記公式ドキュメントで response オブジェクトを返す方法がわかりました。
+今回 body は base64 形式なので、isBase64Encoded プロパティは true にする必要があります。
+
+[API Gateway で統合レスポンスを設定する - Amazon API Gateway](https://docs.aws.amazon.com/ja_jp/apigateway/latest/developerguide/api-gateway-integration-settings-integration-response.html)
+
+#### メモリ、タイムアウトを下の方の基本設定で設定する
+
+タイムアウトの初期値はたしか 3 秒となかなか短かったので自分は 10 秒に設定しています。
+メモリはこれによって料金も変わってくるので様子を見て最適な値を設定します。自分のは 128MB で十分そうでした。
+なお処理ログについてはページ上部の方のモニタリングや、CloudWatch などで確認します。
+
+#### テストには API Gateway AWS Proxy というイベントテンプレートを使用する
+
+このイベントテンプレートの queryStringParameters に w が、pathParameters に filename が入ってくることになります。
+任意の値を入れてテストします。
+
+### 2. APIGateway で Lambda に繋げる用の API を作成する
+
+API の作成を行います。
+新しい API で、エンドポイントはエッジ最適化です。
+
+1. アクションからリソースの作成をクリックし、 リソース名に filename 、 リソースパスに{filename+} 、 API Gateway CORS を有効にするにチェックを入れ 、作成する
+2. ANY メソッドは不要なので、アクションからメソッドの削除を行う
+3. アクションからメソッドの作成をクリックし、GET メソッドを 統合タイプに Lambda 関数プロキシ 、Lambda リージョン、Lambda 関数に自分が作成したものを入れ、作成する。
+4. メソッドリクエストの URL クエリ文字列パラメータにクエリ文字列の追加を行い、名前を w とする
+5. メソッドリクエストの HTTP リクエストヘッダーにヘッダーの追加を行い、 Accept と Content-Type をそれぞれ追加する
+6. 設定のバイナリメディアタイプに`image/*`を追加 する
+7. アクションから API のデプロイを行い、適当なステージ名を入力してデプロイする
+
+デプロイしたステージの URL の呼び出しというところに、APIGateway 用の URL が表示されます。
+これを CloudFront のオリジンとするのでコピーしておきます。
+
+### 3. CloudFront で APIGateway をオリジンとしたビヘイビアを作成する
+
+まだディストリビューションを作成していなければ web で画像が保存してある S3 をオリジンとして作成します。
+
+1. Origins から Create Origin を選択し、作成した APIGateway の URL を貼り付けます
+2. Origin Protocol Policy を HTTPS Only、 Origin Custom Headers に Accept: image/jpeg,image/png 、 Content-Type: image/jpeg,image/png を入れて作成します。
+3. Behaviors から Create Behavior を選択し、 パスパターンを\*.png 、 Query String Forwarding and Caching を Forward all, cached based on whitelist 、 Query String Whitelist に w とし作成します。
+4. 3 と同じでパスパターンを\*.jpg とした Behavior も作成します。
+
+#### Behavior をデフォルトのものと分けることで png、jpg のみ Lambda でのリサイズを行うようにする
+
+パスパターンによって CloudFront からリクエストが向かう Origin を分けることができます。
+自分のプロジェクトでは画像以外にも css や js、mp4 なども S3 に置いてあるので、CloudFront から通る全てのリクエストが Lambda リサイズに行ってしまうと困ります。
+なので、パスパターンによって jpg と png のみ Lambda リサイズに行くようにしています。
+
+なお、パスパターンは正規表現ほどの柔軟性は持っていないので jpg と png で分けて Behavior を作成しています。
+また、このディレクトリ配下の jpg と png は直接 S3 に取りに行きたいという場合もあるかと思うのですが、そのような場合は`sample/*.jpg`などとすると sample ディレクトリ配下のサブディレクトリを含む jpg のみ分けることができます。
+
+さらに言うと.jpeg や.PNG といった画像もありえますが、この辺は S3 に保存する段階でフィルターできるとよいと思います。
+
+#### Query String Forwarding and Caching の設定について
+
+CloudFront のデフォルトの Query String Forwarding and Caching の設定は None（Improves Cashing）です。
+これは CloudFront での取得 URL についたクエリを無視してキャッシュするというものです。
+つまり、None のままだと、下記は全て同じリクエストと認識されてキャッシュされます。
+
+`https://example.cloudfront.net/sample.png`
+`https://example.cloudfront.net/sample.png?w=200`
+`https://example.cloudfront.net/sample.png?w=1000`
+
+サイズ 200 の画像はサイズ 200 で、サイズ 1000 の画像はサイズ 1000 でキャッシュしてほしいので、
+設定を Forward all, cached based on whitelist とし、w クエリーのみ区別してキャッシュするようにします。
+
+### 最後に費用について
+
+以上でリサイズ API が完成しました！
+なお、費用については S3、CloudFront、APIGateway、Lambda でかかってくることになりますが、S3 と CloudFront は導入以前と特に変わりません。
+導入当初こそ Lambda の呼び出しカウントも数 100 いきましたが、ブラウザキャッシュや CloudFront のキャッシュもあるので、その後は日に 100 未満程度の呼び出しカウントにおさまっています。
+上記ぐらいの規模感で APIGateway と Lambda で月に数ドルという感じになりそうです。

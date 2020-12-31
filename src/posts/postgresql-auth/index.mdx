@@ -1,0 +1,279 @@
+---
+title: "PostgreSQLの権限系操作まとめ"
+date: "2020-06-27"
+tags: ["PostgreSQL"]
+draft: false
+---
+
+## はじめに
+
+この記事は PostgreSQL11 を前提に書いています。
+
+## ロールという概念
+
+PostgreSQL での権限の操作を行うにはまずロールという概念を知る必要があります。
+
+ロールとは、簡単に言えばユーザーのようなもので「データベース全体に対する権限」と「オブジェクトに対する権限」の 2 通りの権限を持ちます。
+通常、データベースのログインに使用しているのもこのロールです。
+
+なぜ、ユーザーといわず、あえてロールかというと、ロールにはユーザーとグループという概念が内包されているからです。
+ユーザーもグループもどちらもロールとして作られるものですが、ユーザーはグループに属し、グループの権限を継承することができます。
+なのでロールとユーザーはイコールではなく、ロールというくくりの中にユーザーとグループがいることになります。
+
+## ロールの確認、作成、変更、削除
+
+### ロールの確認
+
+`\du`メタコマンドを使うのが楽です。
+
+```sql
+\du
+                                   List of roles
+ Role name |                         Attributes                         | Member of
+-----------+------------------------------------------------------------+-----------
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
+```
+
+別の方法で pg_roles テーブルを SELECT して確認することもできます。
+
+```sql
+SELECT * FROM pg_roles;
+```
+
+#### 権限の属性について
+
+`\du`コマンドで出てきた Attributes がロールに付与されている権限の属性です。
+ここでいう権限とは「データベース全体に対する権限」の方です。
+代表的なものをいくつか軽く解説します。
+
+- LOGIN：ログインすることができる（権限がなければ Cannot login と表示される）
+- SUPERUSER：ログイン以外の権限検査が行われなくなる。濫用はダメ
+- CREATEROLE：ロールの作成、変更、削除を行える
+- CREATEDB：データベースの作成を行える
+- INHERIT：グループからの権限の継承を行う（権限がなければ No inheritance と表示される）
+- PASSWORD：ログイン時にパスワードを要求する（`PASSWORD 'password'`のように設定する）
+
+その他の属性については下記の`CREATE ROLE`と`ALTER ROLE`についての公式ページでご確認ください。
+[https://www.postgresql.jp/document/11/html/sql-createrole.html](https://www.postgresql.jp/document/11/html/sql-createrole.html)
+[https://www.postgresql.jp/document/11/html/sql-alterrole.html](https://www.postgresql.jp/document/11/html/sql-alterrole.html)
+
+### ロールの作成と変更
+
+これらの属性はロールの作成時か変更時に次のようにロールに付与することができます。
+
+```sql
+CREATE ROLE testuser LOGIN PASSWORD 'testuser';
+ALTER ROLE testuser WITH CREATEDB CREATEROLE;
+```
+
+なお LOGIN 権限については次のように書くことでデフォルト LOGIN 権限ありのロールとすることもできます。
+
+```sql
+CREATE USER testuser PASSWORD 'testuser';
+```
+
+### ロールの削除
+
+ロールの削除は次のように行います。
+
+```sql
+DROP ROLE testuser;
+```
+
+## ロールに対するオブジェクトの権限の付与と削除
+
+先程は「データベース全体に対する権限」でしたが、次に「オブジェクトに対する権限」を見ていきます。
+オブジェクトに対する権限とは、テーブルや関数に関する権限のことです。
+
+### オブジェクトの権限の確認
+
+`\dp`メタコマンドを使用します。
+
+確認の前に試しに sample テーブルを作成して、先程作った testuser ロールでの権限がどうなっているか確認してみます。
+
+```sql
+CREATE TABLE sample (id int, name varchar);
+INSERT INTO sample VALUES (1, 'aaa');
+```
+
+testuser でログインして sample テーブルを取得しようとしますが権限がなく取得できないことがわかります。
+
+```sql
+$ psql -U testuser -h localhost postgres
+select * from sample;
+ERROR:  permission denied for table sample
+
+\dp
+                             Access privileges
+ Schema |  Name  | Type  | Access privileges | Column privileges | Policies
+--------+--------+-------+-------------------+-------------------+----------
+ public | sample | table |                   |                   |
+```
+
+注意点として、権限がないと言ってもデータベースにアクセスできている時点でテーブルの存在自体は隠せません。
+`\d`コマンドでテーブルの存在は確認することができます。
+存在自体知らせたくないテーブルの場合、データベースを別にするなどの対策が必要です。
+
+### オブジェクトの権限の付与
+
+このテーブルを取得できるようにするには次のように testuser ロールに権限の付与をする必要があります。
+権限の付与には`GRANT`コマンドを使用します。
+
+```sql
+GRANT SELECT ON sample TO testuser;
+```
+
+指定の権限の種類を、指定オブジェクト上に、指定ロールに付与すると英語的に指定できます。
+これで SELECT はできるようになりましたが、INSERT, UPDATE, DELETE などはできません。
+`\dp`コマンドで見ると下記のようになっています。
+
+```sql
+postgres=# \dp
+                                 Access privileges
+ Schema |  Name  | Type  |     Access privileges     | Column privileges | Policies
+--------+--------+-------+---------------------------+-------------------+----------
+ public | sample | table | postgres=arwdDxt/postgres+|                   |
+        |        |       | testuser=r/postgres       |                   |
+```
+
+それぞれの権限の種類は`arwdDxt`の 1 文字ずつで表されます。
+
+- a: INSERT(add)
+- r: SELECT(read)
+- w: UPDATE(write)
+- d: DELETE
+- D: TRUNCATE
+- x: REFERENCES
+- t: TRIGGER
+
+これらの権限は一度にすべて指定できたり、テーブルもスキーマ内のテーブルすべてに指定できたりします。
+
+```sql
+GRANT ALL ON ALL TABLES IN SCHEMA public TO testuser;
+```
+
+#### USAGE 権限
+
+そのオブジェクトを使用できるかの権限です。
+これがないと SELECT だけ GRANT しても使用できません。
+ロールには public スキーマの USAGE 権限は最初から付与されていますが、それ以外のスキーマには新たに渡して上げる必要があります。
+これはテーブルに対してではなくスキーマに対してなので上述の`GRANT ALL ON ALL TABLES`でも付与されないことに注意が必要です。
+
+```sql
+GRANT USAGE ON SCHEMA testschema TO testuser;
+```
+
+その他詳細は`GRANT`コマンドの公式ページでご確認ください。
+[https://www.postgresql.jp/document/11/html/sql-grant.html](https://www.postgresql.jp/document/11/html/sql-grant.html)
+
+### オブジェクトの権限の削除
+
+オブジェクトの権限の削除は`REVOKE`で行います。
+GRANT では`TO ロール名`だったのが、`FROM ロール名`になっていることに注意してください。
+
+```sql
+-- sampleテーブルからSELECT権限のみ削除
+REVOKE SELECT ON sample FROM testuser;
+
+-- publicスキーマの全テーブルから全権限を削除
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM testuser;
+```
+
+その他詳細は`REVOKE`コマンドの公式ページでご確認ください。
+[https://www.postgresql.jp/document/11/html/sql-revoke.html](https://www.postgresql.jp/document/11/html/sql-revoke.html)
+
+## ロールとグループ
+
+これまではユーザーしか扱わなかったですが、このユーザーをグループに所属させてみます。
+はじめの方でも述べましたが、ユーザー・グループはロールに内包される概念であり、厳密な設定でロールと異なるわけではありません。
+なんならユーザーとグループにも明確な違いはありません（グループも別のグループに所属できるため）。
+
+### ユーザーのグループへの所属
+
+まず testgroup ロールを作成し、そこに sample テーブルへの SELECT 権限を付与します。
+
+```sql
+CREATE ROLE testgroup;
+GRANT SELECT ON sample TO testgroup;
+```
+
+そして testuser ロールを testgroup ロールに所属させます。
+ロールのグループへの所属は`GRANT`コマンドで行います。
+権限の付与と同じく、グループも権限とみなして同じコマンドを使います。
+
+```sql
+GRANT testgroup TO testuser;
+```
+
+これで testuser は直接 sample テーブルへの SELECT 権限を持ちませんが、testgroup ロールを通して権限を持てるようになりました。
+これは同一の権限を複数のロールでまとめて扱いたいときに便利です。
+なお、権限が継承されるのはロールに INHERIT 属性がデフォルトでついているからであり、NOINHERIT 属性になっている場合は権限が継承されません。
+
+また、`\du`コマンドで調べると testuser ロールが testgroup ロールのメンバーであることがわかります。
+
+```sql
+ Role name |                         Attributes                         |  Member of
+-----------+------------------------------------------------------------+-------------
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
+ testgroup | Cannot login                                               | {}
+ testuser  | Create role, Create DB                                     | {testgroup}
+```
+
+### ユーザーのグループへの所属の削除
+
+こちらは`REVOKE`コマンドで行います。
+
+```sql
+REVOKE testgroup FROM testuser;
+```
+
+## オブジェクトに対するデフォルト権限の設定
+
+これまでのようにロールにテーブルへの権限を設定したとしても、新規テーブルが作成されたら新たに権限設定をしなくてはなりません。
+その手間を防ぐために`ALTER DEFAULT PRIVILEGES`コマンドというデフォルトのアクセス権限を定義するコマンドが用意されています。
+
+```sql
+-- publicスキーマのテーブルにデフォルトでtestuserロールへのSELECT権限を付与する
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO testuser;
+```
+
+なお、今後追加されるテーブルにデフォルトで権限が付与されるだけで、現在存在するテーブルに権限が付与されるわけではないので注意してください。
+詳細は公式ページをご確認ください。
+[https://www.postgresql.jp/document/11/html/sql-alterdefaultprivileges.html](https://www.postgresql.jp/document/11/html/sql-alterdefaultprivileges.html)
+
+## 行単位のアクセス権の設定
+
+テーブル単位よりさらに細かく行レベルでアクセス権を設定することもできます。
+これを行セキュリティポリシー、行単位セキュリティなどと呼びます。
+
+```sql
+-- テスト用のテーブルを作成
+CREATE TABLE users (username text, text text);
+
+-- 行単位セキュリティを有効にする
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- testuserロールに対してusernameがtestuserのような行のみアクセスできるようにポリシーを作成
+CREATE POLICY check_username ON users TO testuser USING (username = current_user);
+
+-- ポリシー以外の権限はすべてtestuserに付与
+GRANT ALL ON users TO testuser;
+
+-- ダミー行を追加
+INSERT INTO users VALUES ('testuser', 'aaa'), ('no_testuser', 'bbb');
+
+-- testuserロールでログインして取得。username=testuserの行のみ取得されている
+SELECT * from users;
+```
+
+行セキュリティポリシーの詳細
+[https://www.postgresql.jp/document/11/html/ddl-rowsecurity.html](https://www.postgresql.jp/document/11/html/ddl-rowsecurity.html)
+
+## まとめ
+
+- ロールにはユーザーとグループがある
+- ロールの確認は`\du`
+- オブジェクトの権限の確認は`\dp`
+- ロールへの権限の付与とグループへの所属は`GRANT`
+- ロールの権限の削除とグループの所属の削除は`REVOKE`
+- デフォルトの権限定義は`ALTER DEFAULT PRIVILEGES`
