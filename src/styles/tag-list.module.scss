@@ -1,5 +1,6 @@
 @import "./style.scss";
 
-.tags {
+.tag-list {
   display: flex;
+  flex-wrap: wrap;
 }

@@ -3,6 +3,7 @@ import { Link, PageProps } from "gatsby"
 import Layout from "./layout"
 import Helmet from "./helmet"
 import Tags from "./tags"
+import TagList from "./tag-list"
 import Bio from "./bio"
 import Pagination from "./pagination"
 import styles from "../styles/posts.module.scss"
@@ -38,7 +39,9 @@ const Posts: React.FC<PageProps<GatsbyTypes.PostsQuery, PageContext>> = (
           </div>
           <Bio />
         </main>
-        {/* <aside className="aside">タグ一覧</aside> */}
+        <aside className="aside">
+          <TagList />
+        </aside>
       </div>
     </Layout>
   )

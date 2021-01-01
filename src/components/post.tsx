@@ -2,6 +2,7 @@ import React from "react"
 import Layout from "../components/layout"
 import Helmet from "./helmet"
 import Tags from "../components/tags"
+import TagList from "../components/tag-list"
 import Toc from "../components/toc"
 import Bio from "../components/bio"
 import Share from "../components/share"
@@ -36,13 +37,10 @@ const Post: React.FC<PageProps<GatsbyTypes.PostQuery>> = (props) => {
           </div>
           <Bio />
         </main>
-        {post.tableOfContents.items ? (
-          <aside className="aside">
-            <Toc items={post.tableOfContents.items} depth={1} />
-          </aside>
-        ) : (
-          <></>
-        )}
+        <aside className="aside">
+          <Toc items={post.tableOfContents.items} depth={1} />
+          <TagList />
+        </aside>
       </div>
     </Layout>
   )

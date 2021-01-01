@@ -24,6 +24,20 @@ $aside-width: 300px;
   }
 }
 
+.aside {
+  display: none;
+  @media screen and (min-width: $break-point) {
+    display: block;
+    width: $aside-width;
+    height: 100%;
+    margin-left: 1rem;
+    position: sticky;
+    top: 1rem;
+    z-index: 1000;
+    font-size: 14px;
+  }
+}
+
 .box {
   padding: 1rem;
   background-color: $bg-light-color;
@@ -33,21 +47,11 @@ $aside-width: 300px;
   }
 }
 
-.aside {
-  display: none;
-  @media screen and (min-width: $break-point) {
-    display: block;
-    width: $aside-width;
-    height: 100%;
-    margin-left: 1rem;
-    padding: 1rem;
-    border-radius: 4px;
-    background-color: $bg-light-color;
-    position: sticky;
-    top: 1rem;
-    z-index: 1000;
-    font-size: 14px;
-  }
+.aside-box {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 4px;
+  background-color: $bg-light-color;
 }
 
 .mt-2 {

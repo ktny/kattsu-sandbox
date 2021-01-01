@@ -1,0 +1,15 @@
+@import "./style.scss";
+
+.tag {
+  display: block;
+  margin: 0.5rem 0.5rem 0 0;
+  padding: 0 0.4rem;
+  border-radius: 2px;
+  font-size: 0.8rem;
+  color: $white-color;
+  background-color: $link-color;
+}
+
+.count {
+  margin-left: 0.2rem;
+}

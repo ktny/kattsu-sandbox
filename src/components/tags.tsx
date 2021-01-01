@@ -1,6 +1,5 @@
 import React from "react"
-import { Link } from "gatsby"
-import kebabCase from "lodash/kebabCase"
+import Tag from "./tag"
 import styles from "../styles/tags.module.scss"
 
 const Tags = ({ tags }) => {
@@ -10,9 +9,7 @@ const Tags = ({ tags }) => {
   return (
     <div className={styles.tags}>
       {(tags || []).map((tag: string) => (
-        <Link to={`/tag/${kebabCase(tag)}`} className={styles.tag} key={tag}>
-          {tag}
-        </Link>
+        <Tag tag={tag} count={0} key={tag} />
       ))}
     </div>
   )
