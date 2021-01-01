@@ -16,7 +16,7 @@ Laravel5.5 で検証しています。
 
 公式サイトにものっている次のような User モデルと posts という 1 対多のリレーションメソッドがあったとします。
 
-```php:Userモデル
+```php:title=Userモデル
 <?php
 
 namespace App;
@@ -37,7 +37,7 @@ class User extends Model
 
 あるひとりの User が持つ全ての Post を取得したい場合おそらくこんな感じで取得すると思います。
 
-```php:idが1のUserの全Postを取得
+```php:title=idが1のUserの全Postを取得
 $user = App\User::find(1);
 $posts = $user->posts;
 ```
@@ -66,7 +66,7 @@ attiribute は各レコード固定の値になりますが、relations 内の�
 先ほどの全 Post を取得する場合と少しやることを変えて、有効な全 Post を取得するコードを書いてみます。
 リレーションメソッド posts をそのまま使用する場合、次のようなコードになるかと思います。
 
-```php:idが1のUserの有効な全Postを取得
+```php:title=idが1のUserの有効な全Postを取得
 $user = App\User::find(1);
 $posts = $user->posts()->where('active', 1)->get();
 ```
@@ -90,7 +90,7 @@ N+1 問題とはざっくりいうと、「ループのなかで SQL を都度�
 
 例えば、下記のような Book モデルがあって、各 Book と 1 対 1 の Author モデルと繋げるリレーションメソッド author が定義されていたとします。
 
-```php:Bookモデル
+```php:title=Bookモデル
 <?php
 
 namespace App;
@@ -111,7 +111,7 @@ class Book extends Model
 
 これで、全 Book の Author の名前を取得する場合、次のように書くと N+1 問題にぶつかります。
 
-```php:全Bookを取得し、foreach内で各BookのAuthorを取得する
+```php:title=全Bookを取得し、foreach内で各BookのAuthorを取得する
 $books = App\Book::all();
 
 foreach ($books as $book) {
@@ -121,7 +121,7 @@ foreach ($books as $book) {
 
 これを実行すると大体次のような SQL が発行されるかと思います。
 
-```SQL
+```sql
 SELECT * FROM books;
 SELECT * FROM authors WHERE book_id = 1;
 SELECT * FROM authors WHERE book_id = 2;
@@ -134,7 +134,7 @@ Book が全部で 25 レコードあるとしたら、25+1 で合計 26 のク�
 このうち大部分の SQL は book_id が違うだけなので無駄ですよね。
 これを EagerLoad で削減できます。
 
-```php:全Bookを取得し、authorをEagerLoadしておく
+```php:title=全Bookを取得し、authorをEagerLoadしておく
 $books = App\Book::with('author')->get();
 
 foreach ($books as $book) {
@@ -146,7 +146,7 @@ foreach ($books as $book) {
 こうすることで、次の 2 クエリしか発行されないようになります。
 N の数が大きければ大きいほど、重要な削減につながりますね。
 
-```SQL
+```sql
 SELECT * FROM books;
 SELECT * FROM authors WHERE id IN (1, 2, 3, 4, 5, ...)
 ```
@@ -159,7 +159,7 @@ SELECT * FROM authors WHERE id IN (1, 2, 3, 4, 5, ...)
 
 with に渡す引数を配列にするだけです。
 
-```php:複数のリレーションに対するEagerLoad
+```php:title=複数のリレーションに対するEagerLoad
 $books = App\Book::with(['author', 'publisher'])->get();
 ```
 
@@ -168,7 +168,7 @@ $books = App\Book::with(['author', 'publisher'])->get();
 リレーションで取得した先のモデルからさらに別のリレーションにつなげるような場合です。
 ドット記法が使えます。
 
-```php:ネストしたEagerLoad
+```php:title=ネストしたEagerLoad
 $books = App\Book::with('author.contacts')->get();
 ```
 
@@ -192,7 +192,7 @@ if ($someCondition) {
 例では、post の title に first という言葉を含むという制約をかけています。
 where だけでなく orderBy など他のクエリビルダも使えます。
 
-```php:EagerLoadへの制約
+```php:title=EagerLoadへの制約
 $user = App\User::with(['posts' => function ($query) {
     $query->where('title', 'like', '%first%');
 }])->find(1);
@@ -207,7 +207,7 @@ foreach ($posts as $post) {
 
 EagerLoad への制約はこう書いてはいけません。
 
-```php:EagerLoadへの制約をあとまわしにする
+```php:title=EagerLoadへの制約をあとまわしにする
 $user = App\User::with('posts')->find(1);;
 $posts = $user->posts()->where('title', 'like', '%first%')->get();
 
@@ -223,7 +223,7 @@ EagerLoad を使用する場合は Eloquent リレーションではなく、 **
 ただ上記の EagerLoad への制約のような無名関数で制約をかける方法は他で同じコードを書かないような書捨ての場合に行う方法であって、実務では posts とは別のリレーションメソッドを作成してそれを使用するのがよいかと思います。
 上記の例だと下記のようなものになります。
 
-```php:Userモデル
+```php:title=Userモデル
 <?php
 
 namespace App;
@@ -250,7 +250,7 @@ class User extends Model
 }
 ```
 
-```php:EagerLoadへの制約（別のリレーションメソッドを使用）
+```php:title=EagerLoadへの制約（別のリレーションメソッドを使用）
 $user = App\User::with('postsInTitleFirst')->find(1);
 $posts = $user->postsInTitleFirst;
 
@@ -266,7 +266,7 @@ foreach ($posts as $post) {
 上記のような例は first という文字がはいっているという決め打ちの制約なので、postsInTitleFirst というリレーションメソッドを作ることができましたが、動的に変更される任意の文字が入る制約の場合どうすればいいでしょうか？
 その場合、自分は **動的プロパティで返ってきたコレクションに対して制約をかける** という方法をとっています。
 
-```php:EagerLoadへの制約をあとまわしにする
+```php:title=EagerLoadへの制約をあとまわしにする
 $word = '%first%'; // 任意の文字が入る
 
 $user = App\User::with('posts')->find(1);

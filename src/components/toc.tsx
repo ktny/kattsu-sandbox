@@ -4,7 +4,7 @@ import styles from "../styles/toc.module.scss"
 
 const Toc = ({ items, depth }) => {
   return (
-    <section className="aside-box">
+    <section className={depth === 1 ? "aside-box" : ""}>
       <ul className={styles.list}>
         {items.map((item, i) => (
           <li

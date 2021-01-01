@@ -63,10 +63,23 @@ exports.createPages = async ({ graphql, actions }) => {
   })
 
   // タグごとの記事一覧ページを作成
-  Array.from(tagSet).map((tag) => {
+  Array.from(tagSet).map(async (tag) => {
+    const postsResultFilteredTag = await graphql(`
+      query {
+        allMdx(filter: { frontmatter: { tags: { in: "${tag}"}}}) {
+          edges {
+            node {
+              fields {
+                slug
+              }
+            }
+          }
+        }
+      }
+    `)
     paginate({
       createPage,
-      items: posts,
+      items: postsResultFilteredTag.data.allMdx.edges,
       itemsPerPage: 10,
       pathPrefix: `/tag/${kebabCase(tag)}`,
       component: path.resolve(`./src/templates/tag-posts.tsx`),

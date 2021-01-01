@@ -47,7 +47,7 @@ SSL は外部に通信内容が漏れないよう暗号化して通信するた�
 
 最終的に nginx には次のように設定する。
 
-```nginx.conf
+```conf:title=nginx.conf
 ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
 server {
 	listen 443;
