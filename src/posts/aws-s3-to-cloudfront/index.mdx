@@ -1,0 +1,71 @@
+---
+title: "S3にCloudFrontを通すことで月20万ぐらい節約した話"
+date: "2018-02-02"
+tags: ["AWS", "S3", "CloudFront", "PHP", "Laravel"]
+draft: false
+---
+
+開発しているサイトで画像や動画などの静的ファイルを S3 に置き、HTML の img や video タグで S3URL を指定し読み込むということをやっていたんですが、この方法では予想よりもかなりお金がかかったため S3 との間に CloudFront を通したところ料金が激安になったという話です。
+最初から CloudFront 使っとけって話なんですが、インフラの経験が足りずに一月ぐらい出遅れたという失敗談でもあります。
+
+## AWS の料金で DataTransfer が急増。タグ付けをすることでどのサービスが原因かを特定する
+
+AWS の利用料金がかなり上がったことは日時で Slack に通知されるようになっているため気づくことができました。
+しかし、料金カテゴリにはプロダクト名やサービス名ではなく DataTransfer としか出ていなかったため、どのサービスが原因か特定する必要がありました。
+
+DataTransfer ということなのでデータ通信に負荷がかかりすぎていることはなんとなく予想できたのですが、とりあえず S3 など主要なサービスにタグ付をすることにしました。
+S3 でのタグ付はバケットに入って、プロパティ > 詳細設定の Tags からすることができます。ひとまずキーには Name、値にはサービス名を設定しました。
+
+これにより AWS のコストエクスプローラーでタグごとの利用料金を計測することができます。
+タグは S3 のバケットごとに割り振るため、利用料金急騰はどのプロダクトで使用している S3 バケットかまで特定することができました。
+S3 では置いているだけでもお金がかかりますが、リクエストに対するレスポンスもデータ量に応じてお金がかかるため、動画なんか置いてたらちょっとでも人が来るようになったらヤバイってことですね。
+
+## S3 の間に CloudFront をはさむことで S3 へのリクエストを減らす
+
+S3 からの大量データ送信がまずいわけなのでそれを減らすためにキャッシュサーバである CloudFront を導入します。
+ユーザーは CloudFront にデータをリクエストしますが、CloudFront からデータを送信するコストは S3 から送信するコストよりもかなり安く済むので、DataTransfer の料金は安くなる上にエッジサーバーから送信され、HTTP2 も使えるので速くもなります。
+ただし、CloudFront 自体の料金もあり、そこのコストによっては S3 だけで十分という場合もあるかもしれません。
+
+CloudFront のディストリビューションを作ること自体はすごく簡単で、基本的にデリバリーメソッドを web で、OriginDomainName に S3 のホストを入れるだけ。
+
+## CloudFront のキャッシュには気をつける必要がある
+
+CloudFront を導入したことで安くなり速くなりいいことづくめだったが、キャッシュまわりで少し新たに手を加える必要があった。
+というのも、S3 に上げた画像や動画は、CloudFront 側で自動で検知して更新を反映してくれるわけではないので、画像などを更新したはずがユーザーは CloudFront の方しか見ないので、いつまでもキャッシュされた古いデータを見てしまうということが起こり得るのだ。
+
+CloudFront のキャッシュ時間は S3 オリジンの Cache-Control と CloudFront の MIN/MAX/Default TTL から決定されるようだ。
+このあたりについては下記 URL が参考になった。
+[【新機能】Amazon CloudFront に「Maximum TTL / Default TTL」が設定できるようになりました！ ｜ Developers.IO](https://dev.classmethod.jp/cloud/aws/introduction-to-max-ttl-on-cloudfront/)
+
+上記の設定も参考にしたが、CloudFront には Invalidation というキャッシュを更新する機能が備わっており、今回はそれで問題の解消を図ることにした。
+CloudFront のディストリビューションに入って、Invalidations タブからパスを指定して Invalidate ボタンを押すことでそのパスのオブジェクトのキャッシュが更新される。
+全てのオブジェクトを更新したければ`/*`で更新すればよい。
+
+ただ、頻繁に全てのオブジェクトを更新していては CloudFront の効果が薄れるし、何より手動で毎回やるのはめんどくさい。
+AWS には当然ながらこういった機能をプログラム側から操作できる API も備えており、今回のプロダクトは Laravel だったので、aws-sdk-php から特定のパスで invalidation をすることにした。
+
+```php
+protected static function cloudFrontInvalidation($paths)
+{
+    $client = \AWS::createClient('CloudFront');
+
+    $client->createInvalidation([
+        'DistributionId' => config('filesystems.cloud_front_distribution_id'),
+        'InvalidationBatch' => [
+            'Paths' => [
+                'Quantity' => count($paths),
+                'Items' => $paths,
+            ],
+            'CallerReference' => time(),
+        ],
+    ]);
+}
+```
+
+このような特定のパスで invalidation できるメソッドを作成し、S3 へのアップロードを行う処理のところに組み込むことで、キャッシュについての問題も解消することができた。
+なお、invalidation 自体にも料金はかかるが、月に 1000invalidation はまでは無料で、それ以後も安い料金だったのでプログラムに組み込むことでその辺りの心配は少なかった。
+また、1000invalidation というのは更新されるオブジェクトの数ではなく、あくまでパスベースなのでうまくパスを指定すれば大量オブジェクトのキャッシュ更新を少ない invalidation で実現することもできる。
+
+## 参考サイト
+
+[【新機能】Amazon CloudFront に「Maximum TTL / Default TTL」が設定できるようになりました！ ｜ Developers.IO](https://dev.classmethod.jp/cloud/aws/introduction-to-max-ttl-on-cloudfront/)

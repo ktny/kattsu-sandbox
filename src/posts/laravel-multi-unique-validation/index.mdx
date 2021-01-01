@@ -1,0 +1,105 @@
+---
+title: "Laravelで複数カラムのユニーク制約のバリデーションを実装する方法"
+date: "2018-03-30"
+tags: ["PHP", "Laravel"]
+draft: false
+---
+
+公式サイトにもあるのですが、この辺 Laravel5.3 でやり方が増えたらしく、ググってるときにちょっとわかりづらかったので自分用にまとめ直しました。
+自分は 5.5 で確認しています。
+
+## 例. sample テーブルの first カラムと second カラムでユニーク制約したときの書き方
+
+```php
+use Illuminate\Validation\Rule;
+
+/**
+ * Get the validation rules that apply to the request.
+ *
+ * @return array
+ */
+public function rules()
+{
+	// firstカラムとsecondカラムのユニーク制約のバリデーション。どちらも必須とする
+    return [
+        'first'  => 'required',
+        'second' => [
+            'required',
+            // Ruleクラスを使用した5.3からの記法。視覚的にわかりやすくなっている
+            // sampleテーブルでユニーク制約。ignoreで入力されたidはバリデーションから除外する
+            Rule::unique('sample')->ignore($this->input('id'))->where(function($query) {
+                // 入力されたfirstの値と同じ値を持つレコードでのみ検証する
+                $query->where('first', $this->input('first'));
+            }),
+        ],
+        // 5.2までの記法。1行で書けるがあまり直感的ではない
+        // 'second'  => 'required|unique:sample,second,' . $this->input('id'). ',id,first,' . $this->input('first'),
+    ];
+}
+```
+
+### 5.3 から Rule クラスの記法が加わって、基本そっちの方がわかりやすいので使ったほうがよさげ
+
+Rule クラスを use して使用する。
+required など別の制約を同時に課したい場合は、|を区切り文字にする代わりに配列記法で書く。
+
+### ignore で更新する自身のレコードを無視する
+
+複数カラムに限らずユニーク制約のバリデーションをするときに、更新時に自身のレコードの値まで内容に含めてしまってバリデーションに引っかかるのは望ましい挙動ではないはずなので外すことが多い。
+
+| id  | first |
+| --- | ----- |
+| 1   | A     |
+| 2   | B     |
+| 3   | C     |
+
+どういうことかというと、上記のような sample テーブルがあり first カラムにユニーク制約のバリデーションをかけるとして、id が 1 のレコードの first カラムを A として更新し直すような場合にもバリデーションで引っかかってしまうのである。
+テーブルとしてはすでに first カラムに A という値が存在しているのにそれと同じ値で更新するので、ユニーク制約に引っかかるということになる。
+個人的にはこれぐらいデフォルトで気を利かせてほしい気もするのだけど。。
+
+```php
+Rule::unique('sample')->ignore($this->input('id'));
+```
+
+で、このように ignore メソッドに自身のレコードの id を渡すと、そのレコードの内容だけは無視して扱われるので、バリデーションに引っかからないようになる。
+もし、id カラムが主キーでない場合は、第 2 引数に任意のカラム名を渡せる。
+
+### さらに複数カラムでのユニーク制約の場合、where で参照するレコードを絞る
+
+複数カラムでのユニーク制約の場合、さらに参照するレコードを絞ることで、複数カラムで一意ということを検証できるようにする。
+
+| id  | first | second |
+| --- | ----- | ------ |
+| 1   | A     | Apple  |
+| 2   | A     | Orange |
+| 3   | B     | Apple  |
+| 4   | B     | Orange |
+| 5   | C     | Apple  |
+
+上記のような sample テーブルがあり、first と second の複数カラムでユニーク制約のバリデーションをかけるとする。
+新規レコードとして、first が C、second が Orange のデータを入れたいとしたら、複数カラムで一意であればよいので、 **すでにテーブルにあるレコードとしては first カラムが C のレコードだけを見て**、それらのレコードの中に second が Orange のものがなければよいことになる。
+
+```php
+Rule::unique('sample')->ignore($this->input('id'))->where(function($query) {
+    // 入力されたfirstの値と同じ値を持つレコードでのみ検証する
+    $query->where('first', $this->input('first'));
+}),
+```
+
+なので SQL でいうと `WHERE first = 'C'` のようなクエリビルダを書いて、参照するレコードを絞る。
+
+### 5.2 までの記法なら 1 行でもかける
+
+```php
+'unique:sample,second,' . $this->input('id'). ',id,first,' . $this->input('first'),
+```
+
+unique:テーブル,カラム,除外 ID,ID カラム,where 制約カラム,where 制約カラムの値
+
+もちろんイコール以外も否イコールとか IS NULL とかも書き方次第でいける。
+それらの記法はこちらの記事が参考になる。
+[[Laravel]バリデーションの unique における条件指定について - Qiita](https://qiita.com/ichikawa_0829/items/ece3f28a29fd195f7b59)
+
+## 公式サイト
+
+https://readouble.com/laravel/5.5/ja/validation.html

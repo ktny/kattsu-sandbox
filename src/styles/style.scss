@@ -97,3 +97,17 @@ pre[class*="language-"] {
   display: inline !important;
   white-space: normal !important;
 }
+
+table {
+  td,
+  th {
+    padding: 0 0.2rem !important;
+    border: 1px solid hsla(0, 0%, 0%, 0.12);
+  }
+  thead > tr {
+    background-color: #eee;
+  }
+  tr:nth-of-type(even) {
+    background-color: #eee;
+  }
+}

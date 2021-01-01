@@ -1,0 +1,118 @@
+---
+title: "LaravelでDBにデータを保存する方法。createとinsertの違いなど"
+date: "2018-04-04"
+tags: ["PHP", "Laravel"]
+draft: false
+---
+
+## はじめに
+
+本記事の内容は Laravel5.5 で検証しています。
+
+## DB にデータを保存する
+
+DB にデータを保存する方法は、大きく分けて Eloquent でモデルインスタンスを作成して保存する方法と、SQL で直で保存する方法の 2 通りあります。
+Eloquent でモデルインスタンスを作成して保存する方法はさらにいくつかの方法に分かれます。
+
+### 1. create メソッド
+
+```php
+// fillableかguardedのどちらかを指定する必要あり
+protected $fillable = ['name'];
+// protected $guarded = [''];
+
+$flight = App\Flight::create(['name' => 'Flight 10']);
+```
+
+モデルクラスから create メソッドを呼ぶことで、インスタンスの作成 → 属性の代入 → データの保存を一気通貫でやってくれます。
+さらに作成したインスタンスを返してくれるのも便利。
+基本的には create メソッドを使用するのが良いと思う。
+
+注意しなければならない点として、Eloquent はデフォルトで複数代入から保護されているため、create メソッドを使う際は、fillable か guarded 属性のどちらかを指定する必要があります。
+fillable はホワイトリスト的に、guarded はブラックリスト的に指定します。
+上記例では、name を保存させたいので fillable に name を指定しています。
+
+#### ※複数代入とは
+
+ユーザーからの入力を元にデータを保存する場合、悪意のあるユーザーがこちらの意図しないデータの保存・更新を行うように複数の項目を代入してくることです。
+例えば、ユーザー作成の際に管理者権限にするかどうかは通常のページには POST する項目として設定していないにも関わらず、悪意のあるユーザーが独自に項目を追加し POST することで、管理者になってしまうようなものです。
+
+### 2. fill メソッド → save メソッド
+
+```php
+// fillableかguardedのどちらかを指定する必要あり
+protected $fillable = ['name'];
+// protected $guarded = [''];
+
+$flight = new App\Flight();
+
+$flight->fill(['name' => 'Flight 10']);
+
+$flight->save();
+```
+
+インスタンスの作成を new で、属性の代入を fill メソッドで、DB への保存を save メソッドでといくつかの処理に分けて行うスタイル。
+インスタンスは作成したいが、DB への保存は処理を分けたいなどの際に使用する。
+create メソッドと同じく複数代入保護のため、fillable か guarded を指定する。
+なお、find メソッドなどで取得したインスタンスに同じことをすればデータの更新になる。
+
+### 3. 属性を直埋め → save メソッド
+
+```php
+$flight = new App\Flight();
+
+$flight->name = $request->name; // 属性を直埋め
+
+$flight->save();
+```
+
+2 の fill メソッドと同じく、いくつかの処理に分けて行うスタイルだが複数代入から保護されない。
+書き方としても冗長なため、あえて使用する意味はないと思う。
+
+### 4. insert メソッド
+
+```php
+App\Flight::insert(['name' => 'Flight 10']);
+```
+
+SQL で直にインサートするスタイル。
+複数代入から保護されていないのでセキュリティ的に危険、モデルインスタンスを作成しているわけではないのでクエリスコープが無視されるなどのデメリットがある。
+ただ、配列の配列を insert の引数に渡して一度に多くのレコードをまとめて挿入できるので、ユーザーからの入力の可能性がないなど、上記デメリットを無視できる場合は使用した方がよい場合もある。
+
+### おまけ 1. insertGetId メソッド
+
+```php
+$id = App\Flight::insertGetId(['name' => 'Flight 10']);
+```
+
+テーブルが自動増分 ID を持っている場合はレコードを挿入した上、そのレコードの ID を返してくれる。
+
+### おまけ 2. firstOrCreate メソッド/firstOrNew メソッド
+
+```php
+// nameでフライトを取得するか、存在しなければ作成する
+$flight = App\Flight::firstOrCreate(['name' => 'Flight 10']);
+
+// nameでフライトを取得するか、存在しなければインスタンス化する
+$flight = App\Flight::firstOrNew(['name' => 'Flight 10']);
+```
+
+どちらも一度は渡された引数で DB に条件に一致するレコードがないか探します。
+なければ、あとは create メソッドと new の違いで、一度にレコードの保存まで行うか、インスタンスの作成までにとどまるかの違い。
+
+### おまけ 3. updateOrCreate メソッド
+
+```php
+// OaklandからSan Diego行きの飛行機があれば、料金へ９９ドルを設定する。
+// 一致するモデルがなければ、作成する。
+$flight = App\Flight::updateOrCreate(
+    ['departure' => 'Oakland', 'destination' => 'San Diego'],
+    ['price' => 99]
+);
+```
+
+第 1 引数で指定した条件に一致する既存のモデルで第 2 引数を更新するか、なければインスタンスの作成 → レコードの保存まで行う。
+
+## 参考
+
+[Laravel の ORM で初心者から職人へ](https://qiita.com/henriquebremenkanp/items/cd13944b0281297217a9)

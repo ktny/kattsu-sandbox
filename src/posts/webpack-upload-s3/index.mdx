@@ -1,0 +1,130 @@
+---
+title: "webpackでビルド時に指定ディレクトリ配下を丸ごとS3にアップロードする"
+date: "2018-04-07"
+tags: ["webpack", "AWS", "S3", "CloudFront", "Laravel"]
+draft: false
+---
+
+## 状況
+
+- パフォーマンス向上のため、画像など一部静的ファイルを CloudFront 経由で S3 から読み込むようにしている
+- css や js ファイルはコンパイルなど一手間あるのでアプリケーションサーバの静的ファイル置き場（public ディレクトリ配下）から読み込んでいた
+- コンパイル含むビルドは webpack を使用している（さらに言うと Laravel の mix という webpack のラッパー）
+
+## やりたいこと
+
+- パフォーマンス向上のため、css や js ファイルを含むアプリケーションサーバの静的ファイル置き場から読み込んでいるものを全て CloudFront 経由で S3 から読み込むようにしたい
+
+## やったこと
+
+### webpack-s3-plugin というプラグインで本番環境時のみ S3 にアップロードするようにする
+
+[webpack-contrib/s3-plugin-webpack: Uploads files to s3 after complete](https://github.com/webpack-contrib/s3-plugin-webpack)
+
+```js:title=webpack.mix.js
+const { mix } = require("laravel-mix")
+const S3Plugin = require("webpack-s3-plugin")
+
+// S3アップロードのコマンド以外のコマンドで実行する処理
+if (!process.env.UPLOAD_S3) {
+  // sass、jsのコンパイルなどの処理
+}
+
+// 本番環境かつS3アップロードのコマンドでのみ実行する処理
+if (mix.inProduction() && process.env.UPLOAD_S3) {
+  // webpackのカスタム設定
+  mix.webpackConfig({
+    plugins: [
+      // public/asv配下をs3にアップロードする
+      new S3Plugin({
+        // s3Options are required
+        s3Options: {
+          accessKeyId: process.env.MIX_AWS_ACCESS_KEY_ID,
+          secretAccessKey: process.env.MIX_AWS_SECRET_ACCESS_KEY,
+          region: "ap-northeast-1",
+        },
+        s3UploadOptions: {
+          Bucket: process.env.MIX_S3_BUCKET,
+          CacheControl: "max-age=864000", // 10日のブラウザキャッシュ
+        },
+        // s3のどのルート直下パスに置くか
+        basePath: "site1",
+        // リポジトリ内の下記ディレクトリを丸ごとアップロードする
+        directory: "public",
+        // アップロード時にCloudFrontのインバリデーションを行う
+        cloudfrontInvalidateOptions: {
+          DistributionId: process.env.MIX_CLOUDFRONT_DISTRIBUTION_ID,
+          Items: ["/site1/*"],
+        },
+      }),
+    ],
+  })
+}
+```
+
+開発環境やステージング環境では取り回しの聞くアプリケーションサーバからの読み込みの方が便利なのでそのままにし、本番環境でのビルド時のみ S3 にアップロードするようにしています。
+ステージング環境で上記作業を行うようにすると、ブランチ運用している場合に S3 のアップロード先が別ブランチの作業で上書きされかねないので注意が必要です。
+また、CloudFront からの読み込みはキャッシュに気をつけないとデプロイしたのに変更がされないという事故にも繋がりかねないので、アップロードしたディレクトリのオブジェクトキャッシュを全てインバリデーションするようにしています。
+
+以下、関連して行ったことです。
+
+### sass、js のコンパイルなどと S3 へのアップロードは npm run コマンドを分ける
+
+なぜこうするかというと、S3 へのアップロードは sass、js のコンパイルなどと非同期で行われるからです。
+つまり、コンパイル後の css、js を S3 にアップロードしてほしいのですが、非同期で行われるためコンパイル前にアップロードされる可能性があるので、npm run コマンド自体を分け、同期的に処理が行われるようにしたということです。
+
+例えば、下記のように package.json を書きます。
+
+```json:title=package.json
+"scripts": {
+  "production": "npm run production-build && npm run production-upload-s3",
+  "production-build": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+  "production-upload-s3": "cross-env NODE_ENV=production UPLOAD_S3=true node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+},
+```
+
+production-build は通常の sass、js のコンパイルなどを実行するコマンド、production-upload-s3 は S3 へのアップロードのみを行うコマンドです。
+production-upload-s3 には`UPLOAD_S3=true`で環境変数 UPLOAD_S3 を渡し、webpack.mix.js などで`process.env.UPLOAD_S3`として受け取って、それによって production-upload-s3 実行時のみ S3 へのアップロードのみを行うようにします。
+逆に、`process.env.UPLOAD_S3`がないときに sass、js のコンパイルなどを実行すると設定すれば、ひとつの設定ファイルでそれぞれのコマンドの実行を排他的にすることができます。
+
+それぞれのコマンドで処理が分かれるようにすれば、production コマンド時に`npm run production-build && npm run production-upload-s3`として、同期的に処理が走るようにできます。
+
+### ファイル読み込み関数を本番環境時とそれ以外の環境で読み込む場所を変更する
+
+一例ですが、自分は Laravel の asset 関数をオーバーライドして対応しています。
+
+```php
+public function asset($path, $secure = null, $withQuery = true)
+{
+    // 本番ではCloudFrontを見る
+    if (app()->environment('production')) {
+        $path = trim($path, '/');
+        $url = config('site.cloudFrontUrl') . '/site1/' . $path;
+
+    // ローカル、ステージングの場合はpublicを見る
+    } else {
+        $root = $this->route('top');
+        $root = rtrim($root, '/');
+        $url = $root . '/' . $path;
+    }
+
+    if ($withQuery) {
+        $url = $this->revision ? $url .'?'. $this->revision : $url;
+    }
+
+    return $url;
+}
+```
+
+### CloudFront の Behaviors の Compress Objects Automatically を Yes にする
+
+css や js などの gzip 圧縮を有効にするオプションです。
+おそらく CloudFront 側のメモリを使用するから初期値 No になってそう？
+png や jpg の画像は Yes でも gzip 圧縮できないのでそのままにしていましたが、css や js などのテキストファイルは圧縮可能なので Yes に変更。
+なお、拡張子ごとなどに設定を変えたい場合は Behavior を作成してパスパターンで分岐させます。
+
+### css、js の連結をやめて複数ファイルに分ける
+
+CloudFront へのリクエストは HTTP2 に対応しており、同一ドメインへの同時リクエストの制限がなくなるので、HTTP1.1 で行っていたリクエスト数を減らすためのファイル連結を行う必要がなくなります。
+むしろページごとに使用する css、js のコンポーネントがある程度異なるような大きさのプロジェクトでは、いくつかのファイルに分けて不要なコンポーネントは読み込ませないようにした方がパフォーマンスが上がります。
+キャッシュのヒット率がなるべく上がるように意識してファイルを分割しました。

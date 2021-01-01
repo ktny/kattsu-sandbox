@@ -35,14 +35,17 @@ const typography = new Typography({
       marginTop: rhythm(24 / 16),
       marginBottom: rhythm(10 / 16),
     },
-    h4: {
+    h3: {
       ...adjustFontSizeTo("20px"),
     },
-    h5: {
+    h4: {
       ...adjustFontSizeTo("18px"),
     },
-    h6: {
+    h5: {
       ...adjustFontSizeTo("16px"),
+    },
+    h6: {
+      ...adjustFontSizeTo("14px"),
     },
     p: {
       whiteSpace: "pre-wrap",
@@ -74,6 +77,9 @@ const typography = new Typography({
     },
     strong: {
       background: "linear-gradient(transparent 80%, #ff99ff 60%)",
+    },
+    ".gatsby-highlight": {
+      marginBottom: rhythm(16 / 16),
     },
   }),
 })

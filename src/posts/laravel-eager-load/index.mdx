@@ -1,0 +1,297 @@
+---
+title: "LaravelのEagerLoadまとめ。動的プロパティとEloquentリレーションの違いなど"
+date: "2019-05-05"
+tags: ["PHP", "Laravel"]
+draft: false
+---
+
+## はじめに
+
+Eagerload を使うと SQL クエリがごっそり減って気持ちいいですよね。
+ただ、少し複雑な制約が入るとあれどうするんだっけ？ということがよくあったので、使用方法などを改めてまとめることにしました。
+hasMany とは？といったリレーションの基本については説明していません。
+Laravel5.5 で検証しています。
+
+## Eagerload の前にリレーションはなにを返すかを知る
+
+公式サイトにものっている次のような User モデルと posts という 1 対多のリレーションメソッドがあったとします。
+
+```php:Userモデル
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class User extends Model
+{
+    /**
+     * ユーザーの全ポストの取得
+     */
+    public function posts()
+    {
+        return $this->hasMany('App\Post');
+    }
+}
+```
+
+あるひとりの User が持つ全ての Post を取得したい場合おそらくこんな感じで取得すると思います。
+
+```php:idが1のUserの全Postを取得
+$user = App\User::find(1);
+$posts = $user->posts;
+```
+
+この`$posts`に入っているデータはなにかというと Post モデルのインスタンスのコレクションです。
+つまり`$user->posts`はコレクションを返しています。
+
+リレーションメソッド posts は、`return $this->hasMany('App\Post');`としているので、`$this->hasMany('App\Post')`を返していることは確実です。
+では、この`$this->hasMany('App\Post')`がコレクションを返すのでしょうか？
+
+実はそうではなく、`$this->hasMany('App\Post')`は HasMany オブジェクトというものを返します。
+`$user->posts`はリレーションメソッド posts を呼んでいるのではなく、動的プロパティというものを呼び出しています。
+よく考えればそうなのですが、`posts()`としていないので関数は実行されておらず、リレーションメソッド posts の戻り値が返ってくるわけではないんです。
+
+じゃあ動的プロパティとはなんなんだという疑問が出てきます。
+
+## 動的プロパティとはなにか？
+
+モデルのインスタンスを`dd($user)`のような感じで出力してみるとわかりますが、インスタンスのプロパティには attributes と呼ばれる各レコードのカラムの値の他に、relations というものもあって、その中身を見ると定義したリレーションメソッド名を key、リレーションメソッドの制約に従って取得したリレーション先のモデルインスタンスのコレクションを value とした連想配列が入っています。
+ちなみに、HasMany ではコレクションが入りますが、HasOne ではひとつのモデルインスタンスが直で入ります。
+attiribute は各レコード固定の値になりますが、relations 内の値は定義されたリレーションメソッドやリレーション先のテーブル内容によって動的に変わるので、動的プロパティと呼ばれるのだと思います。
+なるほど便利〜。
+
+## 動的プロパティではなくリレーションメソッドを使用するとどうなるか？
+
+先ほどの全 Post を取得する場合と少しやることを変えて、有効な全 Post を取得するコードを書いてみます。
+リレーションメソッド posts をそのまま使用する場合、次のようなコードになるかと思います。
+
+```php:idが1のUserの有効な全Postを取得
+$user = App\User::find(1);
+$posts = $user->posts()->where('active', 1)->get();
+```
+
+ここでは`$user->posts`ではなく、`$user->posts()`となりました。
+つまり、動的プロパティではなく、リレーションメソッドが返ります。
+どういうことかというと、`$user->posts()`の時点では、`return $this->hasMany('App\Post');`の結果の HasMany オブジェクトが返ってきているということになります。
+
+そして、ひとつ重要なことは HasMany オブジェクトなどの **Eloquent リレーションオブジェクトはクエリビルダとしても動作する** ということです。
+クエリビルダは Laravel で SQL の記法を書きやすくするもので、`where('active', 1)`といった記法をメソッドチェーン的に繋げられます。
+コレクションが返ってくる動的プロパティではそのまま繋げられないのですが、Eloquent リレーションオブジェクトであればそのまま繋げて制約を追加することが可能ということですね。
+
+そうなると Eloquent リレーションの方がいいんじゃないの？という気もしてくるのですが、動的プロパティは「遅延ロード」されるという性質を持っています。
+遅延ロードとは、アクセスされたときにだけリレーションのデータをロードするというもので、このため、あらかじめアクセスしておいて EagerLoad（熱心なロード）ができるのです。
+つまり、ざっくりいうと、 **動的プロパティを返すようにしないと EagerLoad が使えない** ということです！
+
+## ここでようやく EagerLoad のやり方について説明
+
+EagerLoad は N+1 問題を解決するために存在しています。
+N+1 問題とはざっくりいうと、「ループのなかで SQL を都度発行するようなコードだとクエリが膨大になって重くなるよ」という問題です。
+
+例えば、下記のような Book モデルがあって、各 Book と 1 対 1 の Author モデルと繋げるリレーションメソッド author が定義されていたとします。
+
+```php:Bookモデル
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Book extends Model
+{
+    /**
+     * この本を書いた著者を取得
+     */
+    public function author()
+    {
+        return $this->belongsTo('App\Author');
+    }
+}
+```
+
+これで、全 Book の Author の名前を取得する場合、次のように書くと N+1 問題にぶつかります。
+
+```php:全Bookを取得し、foreach内で各BookのAuthorを取得する
+$books = App\Book::all();
+
+foreach ($books as $book) {
+    echo $book->author->name;
+}
+```
+
+これを実行すると大体次のような SQL が発行されるかと思います。
+
+```SQL
+SELECT * FROM books;
+SELECT * FROM authors WHERE book_id = 1;
+SELECT * FROM authors WHERE book_id = 2;
+SELECT * FROM authors WHERE book_id = 3;
+.
+.
+```
+
+Book が全部で 25 レコードあるとしたら、25+1 で合計 26 のクエリが発行されます。なので N+1 問題と呼ばれます。
+このうち大部分の SQL は book_id が違うだけなので無駄ですよね。
+これを EagerLoad で削減できます。
+
+```php:全Bookを取得し、authorをEagerLoadしておく
+$books = App\Book::with('author')->get();
+
+foreach ($books as $book) {
+    echo $book->author->name;
+}
+```
+
+`with(リレーションメソッド名)`の部分が EagerLoad です。
+こうすることで、次の 2 クエリしか発行されないようになります。
+N の数が大きければ大きいほど、重要な削減につながりますね。
+
+```SQL
+SELECT * FROM books;
+SELECT * FROM authors WHERE id IN (1, 2, 3, 4, 5, ...)
+```
+
+## いろいろな EagerLoad
+
+上の例はかなり簡単な EagerLoad の例ですが、実務ではもっといろいろな制約があったり、ひとつのリレーションでは足りないということが多いので、Laravel もいろいろ用意してくれています。
+
+### 複数のリレーションに対する EagerLoad
+
+with に渡す引数を配列にするだけです。
+
+```php:複数のリレーションに対するEagerLoad
+$books = App\Book::with(['author', 'publisher'])->get();
+```
+
+### ネストした EagerLoad
+
+リレーションで取得した先のモデルからさらに別のリレーションにつなげるような場合です。
+ドット記法が使えます。
+
+```php:ネストしたEagerLoad
+$books = App\Book::with('author.contacts')->get();
+```
+
+### 遅延 EagerLoad
+
+親のモデルを取得した後に、ある条件によって eagerload するかを決めたいときなど。
+with の代わりに load を使います。
+
+```php
+
+$books = App\Book::all();
+
+if ($someCondition) {
+    $books->load('author', 'publisher');
+}
+```
+
+### EagerLoad への制約
+
+使用するリレーションにさらに制約をかける場合。
+例では、post の title に first という言葉を含むという制約をかけています。
+where だけでなく orderBy など他のクエリビルダも使えます。
+
+```php:EagerLoadへの制約
+$user = App\User::with(['posts' => function ($query) {
+    $query->where('title', 'like', '%first%');
+}])->find(1);
+$posts = $user->posts;
+
+foreach ($posts as $post) {
+    echo $post->title;
+}
+```
+
+#### EagerLoad への制約の注意点
+
+EagerLoad への制約はこう書いてはいけません。
+
+```php:EagerLoadへの制約をあとまわしにする
+$user = App\User::with('posts')->find(1);;
+$posts = $user->posts()->where('title', 'like', '%first%')->get();
+
+foreach ($posts as $post) {
+    echo $post->title;
+}
+```
+
+たしかに posts()とすれば Eloquent リレーションが返ってくるのでクエリビルダである where メソッドを繋げられるのですが、
+EagerLoad を使用する場合は Eloquent リレーションではなく、 **全て動的プロパティでデータを取得する必要があります。**
+上でも軽く説明しましたが、EagerLoad を使い始めたばかりだとここはハマるポイントではないかなと思います。
+
+ただ上記の EagerLoad への制約のような無名関数で制約をかける方法は他で同じコードを書かないような書捨ての場合に行う方法であって、実務では posts とは別のリレーションメソッドを作成してそれを使用するのがよいかと思います。
+上記の例だと下記のようなものになります。
+
+```php:Userモデル
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class User extends Model
+{
+    /**
+     * ユーザーの全ポストの取得
+     */
+    public function posts()
+    {
+        return $this->hasMany('App\Post');
+    }
+
+    /**
+     * タイトルにfirstの文字が入るPostを取得する
+     */
+    public function postsInTitleFirst()
+    {
+        return $this->posts()->where('title', 'like', '%first%');
+    }
+}
+```
+
+```php:EagerLoadへの制約（別のリレーションメソッドを使用）
+$user = App\User::with('postsInTitleFirst')->find(1);
+$posts = $user->postsInTitleFirst;
+
+foreach ($posts as $post) {
+    echo $post->title;
+}
+```
+
+このようにすれば動的プロパティを使用できていて、可読性も高いコードになります。
+
+## 動的プロパティにより複雑な制約をかけたいとき
+
+上記のような例は first という文字がはいっているという決め打ちの制約なので、postsInTitleFirst というリレーションメソッドを作ることができましたが、動的に変更される任意の文字が入る制約の場合どうすればいいでしょうか？
+その場合、自分は **動的プロパティで返ってきたコレクションに対して制約をかける** という方法をとっています。
+
+```php:EagerLoadへの制約をあとまわしにする
+$word = '%first%'; // 任意の文字が入る
+
+$user = App\User::with('posts')->find(1);
+
+// filterメソッドで各postのtitleに$wordが入っているもののみのコレクションにするようにする
+$posts = $user->posts->filter(function($post) use ($word) {
+    return str_contains($post->title, $word);
+});
+
+foreach ($posts as $post) {
+    echo $post->title;
+}
+```
+
+Laravel のコレクションはかなり高機能なので、filter や first などの各コレクションアイテムに制約をかけるメソッドで使えば、動的な制約にも対応できます。
+動的プロパティでコレクションが返ってきたあとの話なので、もちろん EagerLoad もちゃんとうまくいきます。
+もしもっといい方法があれば教えてください〜。
+
+## まとめ
+
+- 「動的プロパティ」は遅延ロードするから EagerLoad に使える
+- 「Eloquent リレーション」は遅延ロードしないけどクエリビルダに繋げられる
+- EagerLoad を使用する際は「動的プロパティ」でデータを取得するようにする
+- 動的な制約はコレクションに対して行えば対応できる
+
+## 参考
+
+[Eloquent：リレーション 5.5 Laravel](https://readouble.com/laravel/5.5/ja/eloquent-relationships.html)

@@ -1,0 +1,126 @@
+---
+title: "Laravelで重複クエリを排除する簡単な方法"
+date: "2018-01-30"
+tags: ["PHP", "Laravel"]
+draft: false
+---
+
+## Laravel デバッガーで重複クエリを確認
+
+Laravel デバッガーの Queries のタブを見ると、今のページの通信で何クエリ実行され、そのうち何クエリーに重複があるかがわかる。
+キャッシュ変数などを使うことで減らすことができるのだが、重複クエリを一網打尽にする方法がある。
+方法としては発行した SELECT 文の SQL をキャッシュさせ、重複する SQL であればキャッシュから内容を引っ張ってくるというシンプルなもの。
+Laravel5.4 で確認しています。
+
+## 重複するクエリを排除する方法
+
+```php:title=~/app/Support/Database/Builder.php
+<?php
+
+namespace App\Support\Database;
+
+use Cache;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+
+class Builder extends QueryBuilder
+{
+    /**
+     * Run the query as a "select" statement against the connection.
+     *
+     * @return array
+     */
+    protected function runSelect()
+    {
+        return Cache::store('request')->remember($this->getCacheKey(), 1, function() {
+            return parent::runSelect();
+        });
+    }
+
+    /**
+     * Returns a Unique String that can identify this Query.
+     *
+     * @return string
+     */
+    protected function getCacheKey()
+    {
+        return json_encode([
+            $this->toSql() => $this->getBindings()
+        ]);
+    }
+}
+```
+
+クエリをキャッシュするメインの処理。`Cache::store('request')`は下記の config で設定する必要がある。
+
+```php:title=~/config/cache.php
+'stores' => [
+    'request' => [
+        'driver' => 'array'
+    ]
+]
+```
+
+あえてクエリを array キャッシュさせることでリクエスト処理後にキャッシュは削除され、ページ間でのキャッシュは引き継がせないようにされている。これにより 1 リクエストごとにメモリは解放され、重複クエリの排除のために余計なことを考えなくてすむ。
+ただ、ページ間にわたって重複するクエリが多いようであれば、redis や memcached など別のドライバーを使ってもいいかもしれない。
+
+```php:title=~/public/index.php
+try
+{
+    // Flush the Request Cache
+    $app->make('cache')->store('request')->flush();
+}
+catch(ReflectionException $ex)
+{
+    // Do nothing
+}
+```
+
+`$kernel->terminate($request, $response)`の後に記述する。
+
+```php:title=~/app/Support/Database/CacheQueryBuilder.php
+<?php
+
+namespace App\Support\Database;
+
+trait CacheQueryBuilder
+{
+    /**
+     * Get a new query builder instance for the connection.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function newBaseQueryBuilder()
+    {
+        $conn = $this->getConnection();
+
+        $grammar = $conn->getQueryGrammar();
+
+        return new Builder($conn, $grammar, $conn->getPostProcessor());
+    }
+}
+```
+
+各モデルで読込み使用するトレイトを作成する。
+
+```php:title=~/.../SomeModel.php
+<?php
+
+namespace App;
+
+use App\Support\Database\CacheQueryBuilder;
+use Illuminate\Database\Eloquent\Model;
+
+class SomeModel extends BaseModel
+{
+    /**
+     * For Caching all Queries.
+     */
+    use CacheQueryBuilder;
+}
+```
+
+モデルで上記トレイトを使用することでクエリビルダ作成時にクエリがキャッシュされ、重複するクエリは排除されるようになる。
+
+## 参考サイト
+
+[Never Execute a Duplicate Query Again](https://laracasts.com/discuss/channels/guides/never-execute-a-duplicate-query-again)
