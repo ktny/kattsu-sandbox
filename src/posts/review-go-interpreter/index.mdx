@@ -1,8 +1,245 @@
 ---
 title: "『Go言語でつくるインタプリタ』を読んだ"
-date: "2021-01-05"
-tags: ["Go"]
-draft: true
+date: "2021-01-09"
+tags: ["読んだ", "Go"]
+draft: false
 ---
 
-# はじめに
+## はじめに
+
+仕事で ANTLR/Go を使用したパーサーに関わっており、パーサーなどについてより詳しいことを知りたくなったので読んだ。
+下記リポジトリに演習の実装をアップしている。
+https://github.com/ktny/monkey
+
+## インタプリタがソースコードを評価するまで
+
+ソースコードとは本来ただの文字列である。
+これを実行するためには、**ただの文字列に意味を与え、また、各文字の出現位置、文脈、優先順位などにより適切に文字列を解析する**必要がある。
+
+この工程は**字句解析 -> 構文解析 -> 評価**という順で行われる。
+ただの文字列に意味を与え、トークン列とするのが字句解析（レキサー、トークナイザー）。
+トークン列を出現位置、文脈、優先順位などにより解析し、文・式からなる抽象構文木（AST）とするのが構文解析（パーサー）。
+AST を実行するのが評価。
+
+## 字句解析（レキサー、トークナイザー）
+
+字句解析は比較的理解しやすい。
+ポイントは **トークンの定義はあらかじめ決められていること**と、**1 トークンを判別できるように文字を左から読んでいくということ**。
+
+トークンは、演算子、デリミタ、識別子（変数）、キーワードなどがある。
+`+`, `,`のように演算子やデリミタは 1 文字のものが多いが、`==`のように 2 文字のものもある。
+`if`, `true`, `return`などキーワードは定義済みの文字列で、識別子はそうでない文字列になる。
+トークンというオブジェクトには、どういう記号で表されるか、識別子であればどのようなリテラルかといった情報を持つことになる。
+
+字句をトークンにしていくには、まずは 1 文字ずつ左から読んでいき、`+`であれば`+`というトークンとして解析するといったことを行うが、例えば、`=`が出てきた段階では`=`という代入を表すトークンなのか`==`という等価演算子を表すトークンなのかがわからない。そこで、ひとつ先の文字を読めるようにしてトークンを振り分けることでこの問題を解消する。今回は 3 文字の記号トークンはなかったがある場合にもやることは基本的には変わらない。
+
+記号以外のトークンについては、記号でない文字列にあたったら区切りにあたるまで文字列を読み続け、連続する文字列が定義済キーワードであればキーワードトークン、そうでなければ識別子とする。数値も同じように区切りにあたるまで数値を読み続ける。
+
+ひとつ先の文字を読むことで 1,2 文字記号トークンの判別をし、連続する文字列で読むことでキーワードと識別子の判別を行う。
+省略して抜粋すると以下のような処理を行う。
+
+```go:title=字句解析で左から順々にトークンを返す処理
+
+func (l *Lexer) NextToken() token.Token {
+	var tok token.Token
+
+	// 空白をスキップ
+	l.skipWhitespace()
+
+	// 現在見ているcharaに対応するTokenごとに処理
+	switch l.ch {
+	// == か = を判別してトークンを返す
+	case '=':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.EQ, Literal: literal}
+		} else {
+			tok = newToken(token.ASSIGN, l.ch)
+		}
+	case '+':
+		tok = newToken(token.PLUS, l.ch)
+	case 0:
+		tok.Literal = ""
+		tok.Type = token.EOF
+	// 記号トークン以外は識別子または数値として字句解析する
+	default:
+		if isLetter(l.ch) {
+			// 連続した文字列を読み込む
+			tok.Literal = l.readIdentifier()
+			// キーワードとして存在するかしないかを確認し返す
+			tok.Type = token.LookupIdent(tok.Literal)
+			return tok
+		} else if isDigit(l.ch) {
+			// 連続した数値列を読み込む
+			tok.Literal = l.readNumber()
+			tok.Type = token.INT
+			return tok
+		} else {
+			tok = newToken(token.ILLEGAL, l.ch)
+		}
+	}
+
+	l.readChar()
+	return tok
+}
+```
+
+## 構文解析（パーサー）
+
+構文解析は字句解析で手に入れたトークン列を出現位置、文脈、優先順位などにより解析し、文・式からなる抽象構文木（AST）とするのが仕事。**文と式の違いは、値を生成するかしないか**にある。代入できるかどうかと言い換えてもいい。値を生成しないのが文で、するのが式である。
+
+ソースコードはすべて文の集まりだが（式のみからなる式文を含む）、文は複数の式を含んでいることがあり、式はさらに式を含んでいることがある。この式の階層構造が抽象構文木というツリーを作り出す。
+
+例えば、`5 * (add(2, 3) + 10)` というコードがあったとする。
+このコード全体はおそらく`75`という値を返すだろうから式である。そして、このコードの一部分である`5`, `add(2,3)`, `10`, `(add(2, 3) + 10)`も代入できるので式である。評価の際に誤った結果にならないように、適切な木にすることで評価の順序を決めてやる。
+
+文の構文解析は代入文、Return 文などは`let 識別子 = 式`, `return 式`とほぼ固定の形にできるので解析も楽だが、**式は上で見たように無数のパターンが考えられるので単純にパターン化して考えることはできない**。式の構文解析にはトップダウン構文解析、ボトムアップ構文解析という 2 通りの手法があるらしく、「抽象構文木、上から読むか？下から読むか？」ということなのだが、今回はトップダウン構文解析で行った。
+
+トップダウン構文解析におけるポイントは**トークンごとに前置構文解析用の関数、中置構文解析用の関数を紐付け、対応する関数により処理すること**である。
+前置構文解析は式の先頭におかれたトークンを起点に構文解析するもの、中置構文解析は二項演算子のように`2 + 3`の`+`や比較演算子のように左右に項を持つトークンを起点に構文解析するものである。先程単純にパターン化はできないと書いたが、実は**式はこの前置トークンが起点になるものと、中置トークンが起点になるものの 2 パターンしかない**。ただし、トークンごとに AST にする処理は異なってくるので、トークンごとに解析用の関数を紐付けることが有効なのである。ちなみに、識別子や`true`キーワードのように単独で式になるもの、if 式、関数なども前置トークンが起点になるものである。
+
+構文解析ではトークンの出現位置、文脈などによりトークンの結びつきの優先順位をどう決め、式にするかが難しい点である。例えば、`3 + 4 * 5`という式は`4 * 5`の部分を先に計算されるようにしたければそのように AST を作ってやる必要がある。そこで式の結びつきを決めるのに`+`や`*`などのトークンに優先度を付与し、この優先度を引き渡しながら再帰的に構文解析関数を処理することで複雑な処理をシンプルにしている。この優先度は右のトークンとの結合力とも言いかえることができる。
+
+この優先度を引き渡しながら再帰的に構文解析する処理を省略抜粋すると下記のようになる。
+
+```go:title=優先度を引き渡しながら再帰的に構文解析関数を処理する
+
+// 構文解析して式を返す
+// precedence: 現在のparseExpression呼び出しの右結合力を表す
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefixParseFn := p.prefixParseFns[p.curToken.Type]
+	if prefixParseFn == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
+		return nil
+	}
+	// 前置構文解析関数を実行し式を取得（数値、符号付き数値、識別子などが入る）
+	leftExp := prefixParseFn()
+
+	// peekTokenの優先順位が現在より高ければ再帰して式とする
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		infixParseFn := p.infixParseFns[p.peekToken.Type]
+		if infixParseFn == nil {
+			return leftExp
+		}
+
+		p.nextToken()
+
+		// 中置構文解析関数を実行し式を取得（前置で取得したものと合わせて右トークンを結合し式とする）
+		leftExp = infixParseFn(leftExp)
+	}
+
+	return leftExp
+}
+
+// 構文解析して式（中置演算子式）を返す
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+		Left:     left,
+	}
+
+	precedence := p.curPrecedence()
+	p.nextToken()
+	expression.Right = p.parseExpression(precedence)
+
+	return expression
+}
+```
+
+## 評価
+
+評価とは構文解析した文・式の実行である。評価にはいくつか手法があり、AST を再帰的にたどり逐次実行する tree-walking 型インタプリタと呼ばれるものが最も基本的である。これは構築・拡張しやすく、移植性も高いが、実行自体は都度 AST を評価しなければならないため遅い。パフォーマンスが高い手法としては、AST をバイトコードにコンパイルし仮想マシン上で実行直前にネイティブの機械語に JIT コンパイルする手法などが挙げられる。機械語にコンパイルする場合には、ARM,x86 など複数の CPU に対応する場合もありコストがかかる。
+
+今回は最も基本的な tree-walking 型インタプリタで実践した。複数の文からなるプログラム全体を Eval 関数にかけ、**まず上の文から順に評価、次に文に存在する式を評価、式が値を返したらその値を使用してまた式を再帰的に評価**という手順で行っていく。このとき、識別子への代入文が存在すれば、**後で識別子から値を使用できるように、識別子と値を関連付けた「環境」を保持**しておく必要がある。今回はこれを Go の map オブジェクトで表現した。再帰的な評価の処理は次のようになる（省略抜粋）。
+
+```go:title=再帰的な評価
+func Eval(node ast.Node, env *object.Environment) object.Object {
+	switch node := node.(type) {
+	// プログラム自体の評価。必ずここから開始される
+	case *ast.Program:
+		return evalProgram(node, env)
+	// 式文の評価。式自体を再帰的に評価する
+	case *ast.ExpressionStatement:
+		return Eval(node.Expression, env)
+
+	// 式（数値リテラル）の評価。数値オブジェクトを値として返す
+	case *ast.IntegerLiteral:
+		return &object.Integer{Value: node.Value}
+	// 前置式の評価。右項を再帰的に評価した上で前置式としての結果を返す
+	case *ast.PrefixExpression:
+		right := Eval(node.Right, env)
+		if isError(right) {
+			return right
+		}
+		return evalPrefixExpression(node.Operator, right)
+	// 中置式の評価。左右項を再帰的に評価した上で中置式としての結果を返す
+	case *ast.InfixExpression:
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+		right := Eval(node.Right, env)
+		if isError(right) {
+			return right
+		}
+		return evalInfixExpression(node.Operator, left, right)
+	return nil
+}
+```
+
+Eval から始まり各評価の関数へは env 引数が引き渡されていることがわかる。これが識別子と値を関連付けた「環境」という map オブジェクトで、評価の間中ずっと引数として引き回される。
+この環境はひとつのグローバルな環境だけではダメで関数内でのローカルな環境を実現できる必要もある。そうでなければ、例えば次のようなコードで関数の引数評価時に`i=10`に束縛されてしまい期待した挙動にならなかったりする。
+
+```js
+let i = 5;
+let printNum = fn(i) {
+  puts(i);
+}
+printNum(10);
+puts(i);
+```
+
+このため、この「環境」には環境自体にそれをラップする環境があればフィールドとして埋め込むことができるようにし、**自環境から外側の環境にアクセスすることができるようにし、まず、ローカルな環境に期待する識別子があるか探し、なければ外側の環境を見に行く**ようにする。こうすることでローカル変数を持ちつつ、関数内でもグローバルの変数にアクセスすることができる。
+
+```go
+type Environment struct {
+	store map[string]Object
+	outer *Environment
+}
+
+func (e *Environment) Get(name string) (Object, bool) {
+	obj, ok := e.store[name]
+	if !ok && e.outer != nil {
+		obj, ok = e.outer.Get(name)
+	}
+	return obj, ok
+}
+```
+
+さらに、これによりクロージャもスムーズに実現できている。クロージャは関数内で関数を return することでその return された関数がアクセスする変数を関数内で束縛しておくことができる機能だ。内側の関数がローカル変数を持ち続けることができさえすればよい。
+
+```js:title=クロージャ
+let newAdder = fn(x) {
+  return fn(y) {x+y};
+}
+let addTwo = newAdder(2);
+addTwo(2); // 4
+```
+
+newAdder が x をローカル変数として持ち続けることさえできればよい。`x` が GC により消滅しないのは addTwo 識別子が`fn(y) {x+y}`を参照し続けるからである。インタプリタを学ぶことでクロージャへの理解がより深まったと思う。
+
+## 感想
+
+字句解析 -> 構文解析 -> 評価という、インタプリタの基本的な工程はなんとなく知ってはいたが、実際に Go で実装することでプログラミング言語が具体的にはどう動いているか、どう作るかということがわかってよかった。特に構文解析・評価においては再帰的なアルゴリズムを使用することで複雑な処理をシンプルに実装しており再帰の威力を感じることができた。Go という点ではテスト駆動で進めていく点が Go らしさを感じれてよかった。
+
+<iframe
+  style="width:120px;height:240px;"
+  marginwidth="0"
+  marginheight="0"
+  scrolling="no"
+  frameborder="0"
+  src="//rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=katsusand-22&language=ja_JP&o=9&p=8&l=as4&m=amazon&f=ifr&ref=as_ss_li_til&asins=4873118220&linkId=fcc2c6c6c60457d183b471772166d0eb"
+></iframe>
