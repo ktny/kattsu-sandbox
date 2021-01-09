@@ -7,7 +7,7 @@ const TagList = () => {
   const data = useStaticQuery<GatsbyTypes.TagListQuery>(
     graphql`
       query TagList {
-        allMdx {
+        allMdx(filter: { frontmatter: { draft: { in: [false] } } }) {
           nodes {
             frontmatter {
               tags
