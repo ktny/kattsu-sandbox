@@ -3,9 +3,9 @@
 name=$1
 dir="src/posts/$name"
 today=`date '+%Y-%m-%d'`
-template="src/posts/template.mdx"
+template="./template.mdx"
 
-rm -r "$dir"
+rm -r "$dir" 2> /dev/null
 mkdir "$dir"
 cat "$template" | sed -r "s/_date/$today/" >> "$dir"/index.mdx
 
