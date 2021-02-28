@@ -3,9 +3,10 @@
 This is my blog.
 [https://katsusand.dev](https://katsusand.dev)
 
-## Build
+## Develop environment setup
 
 ```sh
+npm i
 gatsby develop
 ```
 
