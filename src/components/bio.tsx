@@ -126,6 +126,11 @@ const Bio = () => {
           </div>
           <p className={styles.desc}>
             大阪でソフトウェアエンジニアとして働いています。
+            <br />
+            <a href="https://bukumanga.com/" target="_blank">
+              BUKUMANGA - はてなブックマーク数を元にwebマンガをまとめたサイト
+            </a>
+            を運営しています。
           </p>
         </div>
       </div>
