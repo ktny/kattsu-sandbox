@@ -1,16 +1,40 @@
 # Kattsu Sandbox
 
-This is my blog.
 [https://katsusand.dev](https://katsusand.dev)
 
-## Develop environment setup
+## セットアップ
 
 ```sh
 npm i
 gatsby develop
 ```
 
-## How to post
+## ディレクトリ構成
+
+.
+├── README.md
+├── gatsby-browser.js
+├── gatsby-config.js
+├── gatsby-node.js
+├── package-lock.json
+├── package.json
+├── post.sh*
+├── public/
+├── src/
+│   ├── components/
+│   ├── images/
+│   ├── pages/
+│   ├── posts/
+│   ├── styles/
+│   ├── templates/
+│   └── utils/
+├── template.mdx
+└── tsconfig.json
+
+下記コマンドで出力
+`tree -aF -L 2 -I . | sed 's/   /\t/g'`
+
+## 記事作成
 
 ```sh
 ./post.sh {article name}
