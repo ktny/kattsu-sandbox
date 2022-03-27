@@ -6,7 +6,7 @@
 
 ```sh
 npm i
-gatsby develop
+npx gatsby develop
 ```
 
 ## ディレクトリ構成
